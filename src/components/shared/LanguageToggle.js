@@ -17,7 +17,7 @@ export default function LanguageToggle({ dark = false }) {
           : 'bg-primary-50 hover:bg-primary-100 text-primary-700 border-primary-200'
         }`}
     >
-      <span className="text-base">{isEn ? '🇮🇳' : '🇬🇧'}</span>
+      <span className="text-base">{isEn ? '🌐' : '🇬🇧'}</span>
       <span>{isEn ? 'தமிழ்' : 'English'}</span>
     </button>
   );

@@ -5,20 +5,74 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import {
-  FaTachometerAlt, FaConciergeBell, FaCalendarAlt,
-  FaBell, FaPhoneAlt, FaSignOutAlt, FaBars, FaTimes,
-  FaShieldAlt, FaExternalLinkAlt, FaLayerGroup, FaImage,
+  FaTachometerAlt, FaConciergeBell, FaCalendarAlt, FaBell,
+  FaPhoneAlt, FaSignOutAlt, FaBars, FaTimes, FaShieldAlt,
+  FaExternalLinkAlt, FaLayerGroup, FaImage, FaTrash,
 } from 'react-icons/fa';
 
 const NAV = [
-  { to: '/admin',                  label: 'dashboard',       Icon: FaTachometerAlt, exact: true },
-  { to: '/admin/bulk-import',      label: 'Bulk Import',     Icon: FaLayerGroup },
-  { to: '/admin/services',         label: 'manageServices',  Icon: FaConciergeBell },
-  { to: '/admin/exams',            label: 'manageExams',     Icon: FaCalendarAlt },
-  { to: '/admin/notifications',    label: 'sendNotif',       Icon: FaBell },
-  { to: '/admin/logo-settings',    label: 'Logo & Icon',     Icon: FaImage },
-  { to: '/admin/contact-settings', label: 'contactSettings', Icon: FaPhoneAlt },
+  { to:'/admin',                  label:'dashboard',       Icon:FaTachometerAlt, exact:true },
+  { to:'/admin/bulk-import',      label:'Bulk Import',     Icon:FaLayerGroup,    badge:'NEW' },
+  { to:'/admin/services',         label:'manageServices',  Icon:FaConciergeBell },
+  { to:'/admin/exams',            label:'manageExams',     Icon:FaCalendarAlt },
+  { to:'/admin/notifications',    label:'sendNotif',       Icon:FaBell },
+  { to:'/admin/logo-settings',    label:'Logo & Icon',     Icon:FaImage },
+  { to:'/admin/contact-settings', label:'contactSettings', Icon:FaPhoneAlt },
 ];
+
+function SideContent({ t, pathname, handleLogout, setSideOpen }) {
+  const isActive = (to, exact) => exact ? pathname===to : pathname===to || (pathname.startsWith(to) && to!=='/admin');
+  const getLabel = (label) => {
+    if (label==='Bulk Import'||label==='Logo & Icon') return label;
+    return t(label);
+  };
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'100%', background:'linear-gradient(180deg,#050f05 0%,#0f2a1a 100%)' }}>
+      {/* Logo */}
+      <div style={{ padding:'20px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ width:42, height:42, background:'linear-gradient(135deg,#15803d,#22c55e)', borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, color:'white', fontSize:15, flexShrink:0 }}>
+            RC
+          </div>
+          <div>
+            <p style={{ color:'white', fontWeight:800, fontSize:14, lineHeight:1.2 }}>Royal Computers</p>
+            <p style={{ color:'#86efac', fontSize:10 }}>Admin Panel</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav style={{ flex:1, padding:'12px 10px', overflowY:'auto' }}>
+        {NAV.map(({ to, label, Icon, badge, exact }) => (
+          <Link key={to} to={to} onClick={() => setSideOpen && setSideOpen(false)} style={{ textDecoration:'none', display:'block' }}>
+            <div className={`admin-nav-item ${isActive(to,exact)?'active':''}`} style={{ marginBottom:2 }}>
+              <Icon style={{ fontSize:14, flexShrink:0 }} />
+              <span style={{ flex:1 }}>{getLabel(label)}</span>
+              {badge && <span style={{ background:'#fbbf24', color:'#0f2a1a', fontSize:9, fontWeight:800, padding:'2px 7px', borderRadius:99 }}>{badge}</span>}
+            </div>
+          </Link>
+        ))}
+      </nav>
+
+      {/* Bottom */}
+      <div style={{ padding:'10px', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
+        <a href="/" target="_blank" rel="noopener noreferrer" style={{ textDecoration:'none', display:'block' }}>
+          <div className="admin-nav-item" style={{ marginBottom:4 }}>
+            <FaExternalLinkAlt style={{ fontSize:12 }} /> View Website
+          </div>
+        </a>
+        <button onClick={handleLogout} style={{ width:'100%', background:'none', border:'none', cursor:'pointer' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', borderRadius:14, fontSize:13, fontWeight:600, color:'#f87171', transition:'all 0.2s' }}
+            onMouseEnter={e=>{e.currentTarget.style.background='rgba(248,113,113,0.1)';}}
+            onMouseLeave={e=>{e.currentTarget.style.background='transparent';}}
+          >
+            <FaSignOutAlt style={{ fontSize:13 }} /> {t('logout')}
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminLayout() {
   const { t } = useTranslation();
@@ -33,100 +87,52 @@ export default function AdminLayout() {
     navigate('/admin/login');
   };
 
-  const isActive = (to, exact) =>
-    exact ? pathname === to : pathname.startsWith(to) && to !== '/admin';
-
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="p-5 border-b border-primary-700">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black text-primary-700 text-sm">RC</div>
-          <div>
-            <p className="text-white font-display font-bold text-sm leading-tight">Royal Computers</p>
-            <p className="text-primary-300 text-xs">Admin Panel</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 p-3 space-y-0.5">
-        {NAV.map(({ to, label, Icon, exact }) => (
-          <Link key={to} to={to}
-            onClick={() => setSideOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-              ${(exact ? pathname === to : pathname === to || (pathname.startsWith(to) && to !== '/admin'))
-                ? 'bg-white text-primary-700 shadow-md'
-                : 'text-primary-100 hover:bg-primary-600'
-              }`}
-          >
-            <Icon className="text-sm flex-shrink-0" />
-            {label === 'Bulk Import' ? (
-              <span className="flex items-center gap-1.5">Bulk Import <span className="bg-gold-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full">NEW</span></span>
-            ) : label === 'Logo & Icon' ? 'Logo & Icon'
-            : t(label)}
-          </Link>
-        ))}
-      </nav>
-
-      {/* Bottom actions */}
-      <div className="p-3 border-t border-primary-700 space-y-1">
-        <a href="/" target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-primary-200 hover:bg-primary-600 hover:text-white transition-all"
-        >
-          <FaExternalLinkAlt className="text-xs" /> View Public Site
-        </a>
-        <button onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-300 hover:bg-red-900/30 hover:text-red-200 transition-all"
-        >
-          <FaSignOutAlt className="text-sm" /> {t('logout')}
-        </button>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-56 bg-primary-800 flex-col flex-shrink-0">
-        <SidebarContent />
+    <div style={{ display:'flex', height:'100vh', background:'#f0fdf4', overflow:'hidden' }}>
+      {/* Desktop sidebar */}
+      <aside style={{ width:220, flexShrink:0, height:'100%', overflow:'hidden' }} className="hidden lg:block">
+        <SideContent t={t} pathname={pathname} handleLogout={handleLogout} />
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile overlay */}
       {sideOpen && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSideOpen(false)} />
-          <aside className="fixed left-0 top-0 bottom-0 w-56 bg-primary-800 z-50 flex flex-col lg:hidden animate-slide-in">
-            <SidebarContent />
+          <div onClick={() => setSideOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:40 }} />
+          <aside style={{ position:'fixed', left:0, top:0, bottom:0, width:220, zIndex:50 }}>
+            <SideContent t={t} pathname={pathname} handleLogout={handleLogout} setSideOpen={setSideOpen} />
           </aside>
         </>
       )}
 
-      {/* Main area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top bar */}
-        <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSideOpen(true)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition"
-            >
-              <FaBars className="text-gray-600" />
+      {/* Main */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', minWidth:0 }}>
+        {/* Topbar */}
+        <header style={{
+          background:'white', padding:'12px 20px',
+          display:'flex', alignItems:'center', justifyContent:'space-between',
+          borderBottom:'1px solid #e5e7eb', boxShadow:'0 1px 4px rgba(0,0,0,0.04)',
+          flexShrink:0,
+        }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <button onClick={() => setSideOpen(true)} className="lg:hidden" style={{ padding:8, borderRadius:10, background:'#f0fdf4', border:'none', cursor:'pointer' }}>
+              <FaBars style={{ color:'#15803d', fontSize:16 }} />
             </button>
-            <div className="flex items-center gap-2">
-              <FaShieldAlt className="text-primary-600 text-sm" />
-              <span className="font-display font-bold text-gray-800 text-sm">{t('adminPanel')}</span>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <FaShieldAlt style={{ color:'#15803d', fontSize:14 }} />
+              <span style={{ fontWeight:800, color:'#1f2937', fontSize:14 }}>Admin Dashboard</span>
             </div>
           </div>
-          <button onClick={handleLogout}
-            className="flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 font-semibold bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-all"
-          >
+          <button onClick={handleLogout} style={{
+            display:'flex', alignItems:'center', gap:6, padding:'7px 16px', borderRadius:10,
+            background:'#fef2f2', border:'1px solid #fecaca', color:'#b91c1c',
+            fontSize:12, fontWeight:700, cursor:'pointer',
+          }}>
             <FaSignOutAlt /> {t('logout')}
           </button>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        {/* Content */}
+        <main style={{ flex:1, overflowY:'auto', padding:'clamp(12px,3vw,24px) clamp(12px,3vw,20px)' }}>
           <Outlet />
         </main>
       </div>

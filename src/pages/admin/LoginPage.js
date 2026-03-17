@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { FaShieldAlt, FaEnvelope, FaLock, FaSignInAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaShieldAlt, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowRight } from 'react-icons/fa';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -21,89 +21,98 @@ export default function LoginPage() {
       await login(email, pass);
       toast.success('Welcome back!');
       navigate('/admin');
-    } catch (err) {
-      toast.error('Invalid email or password');
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error('Invalid email or password'); }
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-900 via-primary-800 to-gov-dark flex items-center justify-center p-4">
-      {/* Background circles */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-white/5 rounded-full -translate-x-24 -translate-y-24 pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full translate-x-24 translate-y-24 pointer-events-none" />
+    <div style={{
+      minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center',
+      background:'linear-gradient(135deg,#050f05 0%,#0f2a1a 50%,#052e16 100%)',
+      padding:'1rem', position:'relative', overflow:'hidden',
+    }}>
+      {/* Background grid */}
+      <div style={{
+        position:'absolute', inset:0,
+        backgroundImage:'linear-gradient(rgba(34,197,94,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(34,197,94,0.05) 1px,transparent 1px)',
+        backgroundSize:'60px 60px',
+      }} />
+      {/* Glow */}
+      <div style={{ position:'absolute', top:'20%', right:'20%', width:400, height:400, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,197,94,0.15) 0%,transparent 70%)', pointerEvents:'none' }} />
 
-      <div className="w-full max-w-sm relative z-10">
-        {/* Card */}
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-br from-primary-700 to-primary-500 p-7 text-center">
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
-              <FaShieldAlt className="text-white text-2xl" />
+      <div style={{ position:'relative', zIndex:1, width:'100%', maxWidth:'min(420px, 100%)' }}>
+        <div style={{
+          background:'white', borderRadius:32, overflow:'hidden',
+          boxShadow:'0 40px 80px rgba(0,0,0,0.4)',
+        }}>
+          {/* Top header */}
+          <div style={{
+            background:'linear-gradient(135deg,#050f05,#15803d)',
+            padding:'40px 36px', textAlign:'center', position:'relative', overflow:'hidden',
+          }}>
+            <div style={{ position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)', backgroundSize:'30px 30px' }} />
+            <div style={{ position:'relative', zIndex:1 }}>
+              <div style={{
+                width:64, height:64, background:'rgba(255,255,255,0.12)', borderRadius:20,
+                display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px',
+                border:'1px solid rgba(255,255,255,0.2)',
+              }}>
+                <FaShieldAlt style={{ color:'white', fontSize:26 }} />
+              </div>
+              <h1 style={{ color:'white', fontWeight:900, fontSize:'1.4rem', marginBottom:4 }}>Admin Login</h1>
+              <p style={{ color:'rgba(134,239,172,0.8)', fontSize:12 }}>Royal Computers · Secure Access</p>
             </div>
-            <h1 className="font-display font-extrabold text-white text-xl">Admin Login</h1>
-            <p className="text-primary-200 text-xs mt-1">Royal Computers · TNeSevai</p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-7 space-y-4">
-            <div>
-              <label className="label">Email Address</label>
-              <div className="relative">
-                <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
+          <form onSubmit={handleSubmit} style={{ padding:'36px' }}>
+            <div style={{ marginBottom:18 }}>
+              <label style={{ display:'block', fontSize:11, fontWeight:800, color:'#6b7280', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:8 }}>Email</label>
+              <div style={{ position:'relative' }}>
+                <FaEnvelope style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'#9ca3af', fontSize:13 }} />
+                <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
                   placeholder="admin@royalcomputers.in"
-                  className="input-field pl-9"
-                  autoComplete="email"
+                  style={{ width:'100%', padding:'13px 14px 13px 42px', borderRadius:16, border:'2px solid #e5e7eb', fontSize:14, fontWeight:500, outline:'none', background:'#f9fafb', transition:'border-color 0.2s', boxSizing:'border-box' }}
+                  onFocus={e=>e.target.style.borderColor='#22c55e'}
+                  onBlur={e=>e.target.style.borderColor='#e5e7eb'}
                 />
               </div>
             </div>
 
-            <div>
-              <label className="label">Password</label>
-              <div className="relative">
-                <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-                <input
-                  type={showPw ? 'text' : 'password'}
-                  value={pass}
-                  onChange={e => setPass(e.target.value)}
+            <div style={{ marginBottom:28 }}>
+              <label style={{ display:'block', fontSize:11, fontWeight:800, color:'#6b7280', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:8 }}>Password</label>
+              <div style={{ position:'relative' }}>
+                <FaLock style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'#9ca3af', fontSize:13 }} />
+                <input type={showPw?'text':'password'} value={pass} onChange={e=>setPass(e.target.value)}
                   placeholder="••••••••"
-                  className="input-field pl-9 pr-10"
-                  autoComplete="current-password"
+                  style={{ width:'100%', padding:'13px 42px', borderRadius:16, border:'2px solid #e5e7eb', fontSize:14, fontWeight:500, outline:'none', background:'#f9fafb', transition:'border-color 0.2s', boxSizing:'border-box' }}
+                  onFocus={e=>e.target.style.borderColor='#22c55e'}
+                  onBlur={e=>e.target.style.borderColor='#e5e7eb'}
                 />
-                <button type="button" onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
+                <button type="button" onClick={() => setShowPw(!showPw)} style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', color:'#9ca3af', cursor:'pointer' }}>
                   {showPw ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full justify-center py-3 text-sm mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
+            <button type="submit" disabled={loading} style={{
+              width:'100%', padding:'15px', borderRadius:18,
+              background: loading ? '#9ca3af' : 'linear-gradient(135deg,#15803d,#22c55e)',
+              color:'white', fontWeight:800, fontSize:15, border:'none', cursor: loading?'not-allowed':'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+              boxShadow: loading ? 'none' : '0 8px 24px rgba(34,197,94,0.35)',
+              transition:'all 0.2s',
+            }}>
               {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                  </svg>
-                  Signing in...
-                </span>
+                <><span style={{ display:'inline-block', width:18, height:18, border:'2.5px solid rgba(255,255,255,0.3)', borderTopColor:'white', borderRadius:'50%', animation:'spinSlow 0.7s linear infinite' }} /> Signing in...</>
               ) : (
-                <><FaSignInAlt /> Sign In</>
+                <> Sign In <FaArrowRight style={{ fontSize:12 }} /></>
               )}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-primary-300 text-xs mt-4">
+        <p style={{ textAlign:'center', color:'rgba(134,239,172,0.5)', fontSize:11, marginTop:20 }}>
           © Royal Computers · Authorized Admin Portal
         </p>
       </div>

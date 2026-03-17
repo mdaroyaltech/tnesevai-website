@@ -28,7 +28,7 @@ export default function NotificationPanel({ onClose }) {
   return (
     <>
       <div className="fixed inset-0 bg-black/30 z-40 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed top-[116px] right-3 sm:right-6 w-[calc(100vw-24px)] max-w-sm bg-white rounded-2xl shadow-2xl z-50 border border-gray-100 overflow-hidden">
+      <div className="fixed top-[110px] sm:top-[116px] right-3 sm:right-6 w-[calc(100vw-24px)] max-w-sm bg-white rounded-2xl shadow-2xl z-50 border border-gray-100 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary-700 to-primary-600 text-white">
           <div className="flex items-center gap-2">

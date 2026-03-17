@@ -60,7 +60,7 @@ export default function SendNotificationPage() {
         <div className="card p-5 space-y-4">
           <h2 className="font-display font-bold text-gray-800">Compose Notification</h2>
 
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div>
               <label className="label">Icon</label>
               <input className="input-field text-2xl text-center" value={icon} onChange={e => setIcon(e.target.value)} />

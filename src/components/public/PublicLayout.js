@@ -5,265 +5,326 @@ import { useTranslation } from 'react-i18next';
 import { useNotifications } from '../../context/NotificationContext';
 import { getContactSettings } from '../../firebase/services';
 import { useLogoSettings } from '../../hooks/useLogoSettings';
+import { useScrollReveal } from '../../hooks/useScrollReveal';
 import NotificationPanel from './NotificationPanel';
 import LanguageToggle from '../shared/LanguageToggle';
 import {
-    FaHome, FaConciergeBell, FaCalendarAlt, FaInfoCircle,
-    FaPhoneAlt, FaBell, FaBars, FaTimes, FaShieldAlt, FaIdBadge,
+  FaHome, FaConciergeBell, FaCalendarAlt, FaInfoCircle,
+  FaPhoneAlt, FaBell, FaBars, FaTimes, FaShieldAlt, FaIdBadge,
 } from 'react-icons/fa';
 
 const LINKS = [
-    { to: '/', label: 'home', Icon: FaHome },
-    { to: '/services', label: 'services', Icon: FaConciergeBell },
-    { to: '/exams', label: 'examDates', Icon: FaCalendarAlt },
-    { to: '/about', label: 'about', Icon: FaInfoCircle },
-    { to: '/contact', label: 'contact', Icon: FaPhoneAlt },
+  { to:'/',         label:'home',      Icon:FaHome },
+  { to:'/services', label:'services',  Icon:FaConciergeBell },
+  { to:'/exams',    label:'examDates', Icon:FaCalendarAlt },
+  { to:'/about',    label:'about',     Icon:FaInfoCircle },
+  { to:'/contact',  label:'contact',   Icon:FaPhoneAlt },
 ];
 
-// ─── Custom logo with React-state fallback ───────────────────────────────────
-function NavLogo({ logo, t, lang, subText }) {
-    const [imgFailed, setImgFailed] = useState(false);
-
-    // Custom logo URL hai aur image load ho gayi
-    if (logo.showCustomLogo && !imgFailed) {
-        return (
-            <img
-                src={logo.logoUrl}
-                alt={logo.shopNameEn || 'Royal Computers'}
-                className="h-10 max-w-[180px] object-contain"
-                onError={() => setImgFailed(true)}
-            />
-        );
-    }
-
-    // Default: RC circle + text
+function NavLogo({ logo, t, lang }) {
+  const [fail, setFail] = useState(false);
+  if (logo.showCustomLogo && !fail) {
     return (
-        <div className="flex items-center gap-2.5">
-            <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center shadow-md font-display font-black text-primary-700 text-lg flex-shrink-0">
-                {logo.navLogoText || 'RC'}
-            </div>
-            <div>
-                <p className="text-white font-display font-bold text-base leading-tight">
-                    {logo.shopNameEn || t('shopName')}
-                </p>
-                <p className="text-primary-200 text-xs font-tamil leading-none">
-                    {(lang === 'ta' && logo.shopNameTa) ? logo.shopNameTa : subText}
-                </p>
-            </div>
-        </div>
+      <img
+        src={logo.logoUrl}
+        alt={logo.shopNameEn || 'Royal Computers'}
+        style={{ height:40, maxWidth:'clamp(100px,30vw,180px)', objectFit:'contain' }}
+        onError={() => setFail(true)}
+      />
     );
+  }
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+      <div style={{
+        width:42, height:42, background:'white', borderRadius:13,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontWeight:900, color:'#15803d', fontSize:15,
+        boxShadow:'0 4px 16px rgba(0,0,0,0.2)', flexShrink:0,
+      }}>
+        {logo.navLogoText || 'RC'}
+      </div>
+      <div>
+        <p style={{ color:'white', fontWeight:800, fontSize:'clamp(13px,2vw,15px)', lineHeight:1.2, letterSpacing:'-0.01em' }}>
+          {logo.shopNameEn || t('shopName')}
+        </p>
+        <p style={{ color:'#86efac', fontSize:11, lineHeight:1 }} className="font-tamil">
+          {lang === 'ta' && logo.shopNameTa ? logo.shopNameTa : t('subText')}
+        </p>
+      </div>
+    </div>
+  );
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function PublicLayout() {
-    const { t, i18n } = useTranslation();
-    const { pathname } = useLocation();
-    const { unreadCount } = useNotifications();
-    const logo = useLogoSettings();
-    const [menuOpen, setMenuOpen] = useState(false);
-    const [notifOpen, setNotifOpen] = useState(false);
-    const [contact, setContact] = useState({});
+  const { t, i18n } = useTranslation();
+  const { pathname } = useLocation();
+  const { unreadCount } = useNotifications();
+  const logo = useLogoSettings();
+  const [menuOpen,  setMenuOpen]  = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [contact,   setContact]   = useState({});
+  const [scrolled,  setScrolled]  = useState(false);
 
-    useEffect(() => {
-        getContactSettings().then(data => { if (data) setContact(data); });
-    }, []);
+  useScrollReveal();
 
-    const active = (to) => to === '/' ? pathname === '/' : pathname.startsWith(to);
+  useEffect(() => { getContactSettings().then(d => { if(d) setContact(d); }); }, []);
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 24);
+    window.addEventListener('scroll', fn, { passive:true });
+    return () => window.removeEventListener('scroll', fn);
+  }, []);
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
 
-    return (
-        <div className="min-h-screen flex flex-col bg-gray-50">
+  const active = (to) => to==='/' ? pathname==='/' : pathname.startsWith(to);
 
-            {/* ── Ticker bar ── */}
-            <div className="bg-gov-dark text-white py-1.5 px-4 text-xs overflow-hidden">
-                <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-                    <div className="marquee-wrap flex-1">
-                        <span className="marquee-content text-gold-300 font-medium">
-                            🔔 TNPSC Group 1 Notification Out &nbsp;|&nbsp;
-                            NEET 2026 Application Open &nbsp;|&nbsp;
-                            Ration Card New Application Available &nbsp;|&nbsp;
-                            Digital Seva Services Available &nbsp;|&nbsp;
-                            Community Certificate Apply Online &nbsp;|&nbsp;
-                            Income Certificate – Apply Here &nbsp;|&nbsp;
-                            PAN Card, Passport, Voter ID – All Services Available
-                        </span>
-                    </div>
-                    <LanguageToggle dark />
+  return (
+    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', overflowX:'hidden' }}>
+      <div id="scroll-bar" />
+
+      {/* ── Ticker ── */}
+      <div style={{ background:'#050f05', padding:'5px 16px', overflow:'hidden', flexShrink:0 }}>
+        <div style={{ maxWidth:'80rem', margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:16 }}>
+          <div className="marquee-wrap" style={{ flex:1, minWidth:0 }}>
+            <span className="marquee-content" style={{ color:'#fbbf24', fontSize:11, fontWeight:600 }}>
+              🔔&nbsp; TNPSC Group 2A Mains — 15 Mar 2026 &nbsp;|&nbsp;
+              NEET UG 2026 — 3 May 2026 &nbsp;|&nbsp;
+              Ration Card · Community Cert · Income Cert Available &nbsp;|&nbsp;
+              PAN Card · Passport · Voter ID · Aadhar Update &nbsp;|&nbsp;
+              Digital Seva All Services — Apply Here
+            </span>
+          </div>
+          <div style={{ flexShrink:0 }}>
+            <LanguageToggle dark />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Header ── */}
+      <header
+        className={scrolled ? 'nav-scrolled' : ''}
+        style={{
+          position:'sticky', top:0, zIndex:50, flexShrink:0,
+          background: scrolled ? undefined : 'linear-gradient(135deg,#050f05 0%,#0f2a1a 60%,#15803d 100%)',
+          padding:'10px clamp(12px,3vw,20px)',
+          transition:'background 0.3s, box-shadow 0.3s',
+          boxShadow: scrolled ? '0 8px 32px rgba(0,0,0,0.4)' : '0 4px 20px rgba(0,0,0,0.25)',
+        }}
+      >
+        <div style={{ maxWidth:'80rem', margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+
+          <Link to="/" style={{ textDecoration:'none', flexShrink:0 }}>
+            <NavLogo logo={logo} t={t} lang={i18n.language} />
+          </Link>
+
+          {/* Desktop nav — hidden below lg */}
+          <nav style={{ display:'flex', alignItems:'center', gap:2 }} className="hidden lg:flex">
+            {LINKS.map(({ to, label, Icon }) => (
+              <Link key={to} to={to} style={{ textDecoration:'none' }}>
+                <div
+                  className={active(to) ? 'nav-link-active' : ''}
+                  style={{
+                    display:'flex', alignItems:'center', gap:6,
+                    padding:'8px 13px', borderRadius:11, fontSize:13, fontWeight:600,
+                    cursor:'pointer', color: active(to) ? 'white' : 'rgba(255,255,255,0.8)',
+                    transition:'all 0.2s', whiteSpace:'nowrap',
+                  }}
+                  onMouseEnter={e=>{ if(!active(to)) e.currentTarget.style.background='rgba(255,255,255,0.1)'; }}
+                  onMouseLeave={e=>{ if(!active(to)) e.currentTarget.style.background='transparent'; }}
+                >
+                  <Icon style={{ fontSize:11, opacity:0.7 }} /> {t(label)}
                 </div>
+              </Link>
+            ))}
+          </nav>
+
+          <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+            {/* Bell */}
+            <button
+              onClick={() => setNotifOpen(!notifOpen)}
+              style={{
+                position:'relative', width:38, height:38, borderRadius:11,
+                background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)',
+                cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                transition:'all 0.2s', flexShrink:0,
+              }}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.2)'}
+              onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.1)'}
+            >
+              <FaBell style={{ color:'white', fontSize:14 }} />
+              {unreadCount > 0 && (
+                <span style={{
+                  position:'absolute', top:-4, right:-4, minWidth:17, height:17,
+                  borderRadius:'50%', background:'#fbbf24', color:'#0f2a1a',
+                  fontSize:9, fontWeight:800, display:'flex', alignItems:'center',
+                  justifyContent:'center', padding:'0 2px',
+                }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Admin — hidden on small mobile */}
+            <Link to="/admin" className="hidden sm:block" style={{ textDecoration:'none' }}>
+              <div style={{
+                display:'flex', alignItems:'center', gap:6,
+                padding:'8px 14px', borderRadius:11,
+                background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.18)',
+                fontSize:12, fontWeight:700, color:'white', cursor:'pointer',
+                transition:'all 0.2s', whiteSpace:'nowrap',
+              }}
+                onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.2)'}
+                onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.1)'}
+              >
+                <FaShieldAlt style={{ fontSize:11 }} /> {t('adminLogin')}
+              </div>
+            </Link>
+
+            {/* Hamburger — show below lg */}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="lg:hidden"
+              style={{
+                width:38, height:38, borderRadius:11,
+                background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)',
+                cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                flexShrink:0,
+              }}
+            >
+              {menuOpen
+                ? <FaTimes  style={{ color:'white', fontSize:14 }} />
+                : <FaBars   style={{ color:'white', fontSize:14 }} />
+              }
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile menu */}
+        {menuOpen && (
+          <div style={{
+            borderTop:'1px solid rgba(255,255,255,0.1)',
+            marginTop:8, padding:'8px 0',
+            animation:'slideUpFade 0.2s ease',
+          }}>
+            {LINKS.map(({ to, label, Icon }) => (
+              <Link key={to} to={to} style={{ textDecoration:'none' }}>
+                <div
+                  className={active(to) ? 'nav-link-active' : ''}
+                  style={{
+                    display:'flex', alignItems:'center', gap:10,
+                    padding:'11px clamp(12px,3vw,20px)',
+                    borderRadius:11, margin:'2px 0',
+                    color: active(to) ? 'white' : 'rgba(255,255,255,0.8)',
+                    fontSize:14, fontWeight:600,
+                  }}
+                >
+                  <Icon style={{ fontSize:12 }} /> {t(label)}
+                </div>
+              </Link>
+            ))}
+            <Link to="/admin" style={{ textDecoration:'none' }}>
+              <div style={{
+                display:'flex', alignItems:'center', gap:10,
+                padding:'11px clamp(12px,3vw,20px)',
+                borderRadius:11, color:'#fbbf24', fontSize:14, fontWeight:600,
+              }}>
+                <FaShieldAlt style={{ fontSize:12 }} /> {t('adminLogin')}
+              </div>
+            </Link>
+          </div>
+        )}
+      </header>
+
+      {notifOpen && <NotificationPanel onClose={() => setNotifOpen(false)} />}
+      <main style={{ flex:1, overflowX:'hidden' }}><Outlet /></main>
+
+      {/* ── Footer ── */}
+      <footer style={{ background:'#050f05', color:'white', paddingTop:'clamp(32px,6vw,56px)', paddingBottom:24 }}>
+        <div style={{ maxWidth:'80rem', margin:'0 auto', padding:'0 clamp(16px,4vw,24px)' }}>
+
+          {/* Footer grid: 1 col mobile → 3 col md+ */}
+          <div className="grid grid-cols-1 md:grid-cols-3" style={{ gap:'clamp(24px,4vw,40px)', marginBottom:'clamp(24px,4vw,40px)' }}>
+
+            {/* Brand */}
+            <div>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+                <div style={{
+                  width:48, height:48, flexShrink:0,
+                  background:'linear-gradient(135deg,#15803d,#22c55e)',
+                  borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center',
+                  fontWeight:900, color:'white', fontSize:17,
+                }}>
+                  {logo.navLogoText || 'RC'}
+                </div>
+                <div>
+                  <p style={{ fontWeight:800, fontSize:15, color:'white', lineHeight:1.2 }}>
+                    {contact.centerName || logo.shopNameEn || t('shopName')}
+                  </p>
+                  <p style={{ fontSize:11, color:'#86efac' }} className="font-tamil">TNeSevai & Digital Seva</p>
+                </div>
+              </div>
+              <p style={{ color:'#4b5563', fontSize:13, marginBottom:16, lineHeight:1.6 }}>{t('tagline')}</p>
+              {(contact.vleCode || logo.vleCode) && (
+                <div style={{
+                  display:'inline-flex', alignItems:'center', gap:10,
+                  background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.2)',
+                  borderRadius:14, padding:'10px 14px',
+                }}>
+                  <FaIdBadge style={{ color:'#86efac', fontSize:15 }} />
+                  <div>
+                    <p style={{ color:'#86efac', fontSize:9, fontWeight:800, letterSpacing:'0.15em' }}>VLE CODE</p>
+                    <p style={{ color:'white', fontFamily:'monospace', fontWeight:700, fontSize:14, letterSpacing:'0.1em' }}>
+                      {contact.vleCode || logo.vleCode}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* ── Header ── */}
-            <header className="sticky top-0 z-50 bg-gradient-to-r from-primary-800 via-primary-700 to-primary-600 shadow-xl">
-                <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-
-                    {/* ✅ FIXED Logo */}
-                    <Link to="/" className="flex items-center gap-3 flex-shrink-0">
-                        <NavLogo
-                            logo={logo}
-                            t={t}
-                            lang={i18n.language}
-                            subText={t('subText')}
-                        />
-                    </Link>
-
-                    {/* Desktop nav */}
-                    <nav className="hidden lg:flex items-center gap-0.5">
-                        {LINKS.map(({ to, label, Icon }) => (
-                            <Link key={to} to={to}
-                                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all
-                  ${active(to) ? 'bg-white text-primary-700 shadow-md' : 'text-white hover:bg-primary-500'}`}
-                            >
-                                <Icon className="text-xs" /> {t(label)}
-                            </Link>
-                        ))}
-                    </nav>
-
-                    {/* Right actions */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setNotifOpen(!notifOpen)}
-                            className="relative p-2.5 rounded-xl bg-primary-500 hover:bg-primary-400 transition-all"
-                        >
-                            <FaBell className="text-white" />
-                            {unreadCount > 0 && (
-                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-gold-400 text-gov-dark text-[10px] font-bold rounded-full flex items-center justify-center animate-bounce px-0.5">
-                                    {unreadCount > 9 ? '9+' : unreadCount}
-                                </span>
-                            )}
-                        </button>
-
-                        <Link to="/admin"
-                            className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-gov-dark hover:bg-gov-medium rounded-xl text-xs font-semibold text-white transition-all"
-                        >
-                            <FaShieldAlt /> {t('adminLogin')}
-                        </Link>
-
-                        <button
-                            onClick={() => setMenuOpen(!menuOpen)}
-                            className="lg:hidden p-2.5 rounded-xl bg-primary-500 hover:bg-primary-400 transition-all"
-                        >
-                            {menuOpen ? <FaTimes className="text-white" /> : <FaBars className="text-white" />}
-                        </button>
+            {/* Links */}
+            <div>
+              <p style={{ color:'#374151', fontSize:11, fontWeight:800, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:16 }}>
+                Navigation
+              </p>
+              {/* 2-col link grid on mobile for space efficiency */}
+              <div className="grid grid-cols-2 sm:grid-cols-1" style={{ gap:8 }}>
+                {LINKS.map(({ to, label, Icon }) => (
+                  <Link key={to} to={to} style={{ textDecoration:'none' }}>
+                    <div className="footer-link">
+                      <Icon style={{ fontSize:11, opacity:0.5 }} /> {t(label)}
                     </div>
-                </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
 
-                {/* Mobile nav */}
-                {menuOpen && (
-                    <div className="lg:hidden border-t border-primary-600 bg-primary-800 px-4 py-3 grid grid-cols-2 gap-1.5">
-                        {LINKS.map(({ to, label, Icon }) => (
-                            <Link key={to} to={to}
-                                onClick={() => setMenuOpen(false)}
-                                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                  ${active(to) ? 'bg-white text-primary-700' : 'text-white hover:bg-primary-600'}`}
-                            >
-                                <Icon className="text-xs" /> {t(label)}
-                            </Link>
-                        ))}
-                        <Link to="/admin"
-                            onClick={() => setMenuOpen(false)}
-                            className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-gold-300 hover:bg-primary-600 col-span-2"
-                        >
-                            <FaShieldAlt /> {t('adminLogin')}
-                        </Link>
-                    </div>
-                )}
-            </header>
+            {/* Contact */}
+            <div>
+              <p style={{ color:'#374151', fontSize:11, fontWeight:800, letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:16 }}>
+                {t('contactUs')}
+              </p>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {contact.timings   && <p style={{ color:'#6b7280', fontSize:13, display:'flex', gap:8 }}><span>⏰</span><span className="font-tamil" style={{ wordBreak:'break-word' }}>{i18n.language==='ta'&&contact.timingsTa?contact.timingsTa:contact.timings}</span></p>}
+                {contact.phone     && <a href={`tel:${contact.phone}`} style={{ color:'#6b7280', fontSize:13, display:'flex', gap:8, textDecoration:'none' }}><span>📞</span>{contact.phone}</a>}
+                {contact.whatsapp  && <a href={`https://wa.me/${contact.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" style={{ color:'#6b7280', fontSize:13, display:'flex', gap:8, textDecoration:'none' }}><span>💬</span>{contact.whatsapp}</a>}
+                {contact.address   && <p style={{ color:'#6b7280', fontSize:13, display:'flex', gap:8 }}><span style={{flexShrink:0}}>📍</span><span className="font-tamil" style={{ wordBreak:'break-word' }}>{i18n.language==='ta'&&contact.addressTa?contact.addressTa:contact.address}</span></p>}
+                {contact.mapLink   && <a href={contact.mapLink} target="_blank" rel="noopener noreferrer" style={{ color:'#86efac', fontSize:12, fontWeight:700, textDecoration:'none' }}>🗺️ View on Google Maps ↗</a>}
+                {!contact.phone&&!contact.timings && <p style={{color:'#374151',fontSize:12,fontStyle:'italic'}}>Add info in Admin → Contact Settings</p>}
+              </div>
+            </div>
+          </div>
 
-            {notifOpen && <NotificationPanel onClose={() => setNotifOpen(false)} />}
-
-            <main className="flex-1"><Outlet /></main>
-
-            {/* ── Footer ── */}
-            <footer className="bg-gov-dark text-white pt-10 pb-5">
-                <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
-                    <div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center font-black text-white text-sm">RC</div>
-                            <div>
-                                <p className="font-display font-bold text-white">
-                                    {contact.centerName || t('shopName')}
-                                </p>
-                                <p className="text-xs text-gray-400 font-tamil">
-                                    {(i18n.language === 'ta' && contact.centerNameTa) ? contact.centerNameTa : t('subText')}
-                                </p>
-                            </div>
-                        </div>
-                        <p className="text-gray-400 text-sm">{t('tagline')}</p>
-                        {contact.vleCode && (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                                <div className="inline-flex items-center gap-1.5 bg-primary-900/60 border border-primary-700 rounded-lg px-2 py-1">
-                                    <FaIdBadge className="text-primary-400 text-xs" />
-                                    <span className="text-xs text-primary-300 font-mono font-bold tracking-wider">
-                                        VLE: {contact.vleCode}
-                                    </span>
-                                </div>
-                                {contact.cscId && (
-                                    <div className="inline-flex items-center gap-1 bg-green-900/40 border border-green-800 rounded-lg px-2 py-1">
-                                        <span className="text-xs text-green-400 font-mono">CSC: {contact.cscId}</span>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    <div>
-                        <h4 className="font-semibold text-gray-300 text-sm mb-3">Quick Links</h4>
-                        <div className="grid grid-cols-2 gap-1">
-                            {LINKS.map(({ to, label }) => (
-                                <Link key={to} to={to} className="text-gray-400 hover:text-primary-400 text-sm transition-colors">
-                                    {t(label)}
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 className="font-semibold text-gray-300 text-sm mb-3">{t('contactUs')}</h4>
-                        <div className="space-y-1.5">
-                            {(contact.timings || contact.timingsTa) && (
-                                <p className="text-gray-400 text-sm font-tamil">
-                                    ⏰ {(i18n.language === 'ta' && contact.timingsTa) ? contact.timingsTa : contact.timings || t('timings')}
-                                </p>
-                            )}
-                            {contact.phone && (
-                                <a href={`tel:${contact.phone}`} className="block text-gray-400 hover:text-white text-sm transition-colors">
-                                    📞 {contact.phone}
-                                </a>
-                            )}
-                            {contact.whatsapp && (
-                                <a href={`https://wa.me/${contact.whatsapp.replace(/\D/g, '')}`}
-                                    target="_blank" rel="noopener noreferrer"
-                                    className="block text-gray-400 hover:text-green-400 text-sm transition-colors">
-                                    💬 {contact.whatsapp}
-                                </a>
-                            )}
-                            {contact.address && (
-                                <p className="text-gray-400 text-sm font-tamil line-clamp-2">
-                                    📍 {(i18n.language === 'ta' && contact.addressTa) ? contact.addressTa : contact.address}
-                                </p>
-                            )}
-                            {contact.mapLink && (
-                                <a href={contact.mapLink} target="_blank" rel="noopener noreferrer"
-                                    className="text-primary-400 hover:text-primary-300 text-xs flex items-center gap-1 transition-colors">
-                                    🗺️ View on Google Maps ↗
-                                </a>
-                            )}
-                            {!contact.phone && !contact.timings && (
-                                <>
-                                    <p className="text-gray-400 text-sm">⏰ {t('timings')}</p>
-                                    <p className="text-gray-400 text-sm">📍 Tamil Nadu</p>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="max-w-7xl mx-auto px-4 border-t border-gray-700 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2">
-                    <p className="text-xs text-gray-500">
-                        © {new Date().getFullYear()} {contact.centerName || t('shopName')} · {t('subText')}
-                    </p>
-                    <p className="text-xs text-gray-600">Authorized TNeSevai & Digital Seva Center</p>
-                </div>
-            </footer>
+          <div style={{
+            borderTop:'1px solid rgba(255,255,255,0.06)', paddingTop:20,
+            display:'flex', justifyContent:'space-between', alignItems:'center',
+            flexWrap:'wrap', gap:8,
+          }}>
+            <p style={{ fontSize:12, color:'#374151' }}>
+              © {new Date().getFullYear()} {contact.centerName || logo.shopNameEn || 'Royal Computers'} · TNeSevai & Digital Seva
+            </p>
+            <p style={{ fontSize:12, color:'#1f2937' }}>Authorized Center · Tamil Nadu 🌐</p>
+          </div>
         </div>
-    );
+      </footer>
+    </div>
+  );
 }

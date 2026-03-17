@@ -4,14 +4,9 @@ import { db } from '../firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
 
 const DEFAULTS = {
-  logoUrl: '',
-  faviconUrl: '',
-  useCustom: false,
-  showVleCode: true,
-  vleCode: '642198200013',
-  navLogoText: 'RC',
-  shopNameEn: 'Royal Computers',
-  shopNameTa: 'ராயல் கம்ப்யூட்டர்ஸ்',
+  logoUrl: '', faviconUrl: '', useCustom: false,
+  showVleCode: true, vleCode: '642198200013',
+  navLogoText: 'RC', shopNameEn: 'Royal Computers', shopNameTa: 'ராயல் கம்ப்யூட்டர்ஸ்',
 };
 
 export function useLogoSettings() {
@@ -20,19 +15,12 @@ export function useLogoSettings() {
   useEffect(() => {
     const unsub = onSnapshot(
       doc(db, 'settings', 'logo'),
-      snap => {
-        if (snap.exists()) {
-          setLogo({ ...DEFAULTS, ...snap.data() });
-        }
-      },
-      err => console.error('Logo settings:', err)
+      snap => { if (snap.exists()) setLogo({ ...DEFAULTS, ...snap.data() }); },
+      err => console.error('Logo settings error:', err)
     );
     return unsub;
   }, []);
 
-  // ✅ KEY FIX: logoUrl exist karna kaafi hai — useCustom false ho toh bhi show karo
-  return {
-    ...logo,
-    showCustomLogo: !!logo.logoUrl,
-  };
+  // ✅ logoUrl exist = show karo, useCustom ki zaroorat nahi
+  return { ...logo, showCustomLogo: !!logo.logoUrl };
 }

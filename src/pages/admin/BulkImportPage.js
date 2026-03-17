@@ -1,294 +1,407 @@
 // src/pages/admin/BulkImportPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../../firebase/config';
-import { collection, addDoc, serverTimestamp, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import {
+  collection, addDoc, serverTimestamp,
+  getDocs, deleteDoc, doc, writeBatch,
+} from 'firebase/firestore';
 import { ALL_SERVICES, ALL_EXAMS } from '../../data/seedData';
 import toast from 'react-hot-toast';
 import {
-  FaUpload, FaTrash, FaCheckCircle, FaExclamationTriangle,
-  FaSpinner, FaConciergeBell, FaCalendarAlt, FaLayerGroup,
+  FaUpload, FaTrash, FaCheckCircle, FaSpinner,
+  FaConciergeBell, FaCalendarAlt, FaLayerGroup,
+  FaExclamationTriangle, FaSync,
 } from 'react-icons/fa';
 
+const BATCH_SIZE = 400;
+
+const clearCollection = async (colName, onProgress) => {
+  let deleted = 0;
+  while (true) {
+    const snap = await getDocs(collection(db, colName));
+    if (snap.empty) break;
+    const chunks = [];
+    for (let i = 0; i < snap.docs.length; i += BATCH_SIZE) {
+      chunks.push(snap.docs.slice(i, i + BATCH_SIZE));
+    }
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(d => batch.delete(doc(db, colName, d.id)));
+      await batch.commit();
+      deleted += chunk.length;
+      onProgress?.(deleted);
+    }
+    if (snap.docs.length < BATCH_SIZE) break;
+  }
+  return deleted;
+};
+
 const CAT_COUNTS = ALL_SERVICES.reduce((acc, s) => {
-  acc[s.category] = (acc[s.category] || 0) + 1; return acc;
+  acc[s.category] = (acc[s.category] || 0) + 1;
+  return acc;
 }, {});
-const CAT_LABELS = { tnesevai: 'TNeSevai', digitalSeva: 'Digital Seva', tnpsc: 'TNPSC', education: 'Education' };
-const CAT_ICONS = { tnesevai: '🏛️', digitalSeva: '💻', tnpsc: '🎓', education: '📚' };
-const CAT_COLORS = { tnesevai: 'bg-green-50 border-green-200 text-green-700', digitalSeva: 'bg-blue-50 border-blue-200 text-blue-700', tnpsc: 'bg-yellow-50 border-yellow-200 text-yellow-700', education: 'bg-purple-50 border-purple-200 text-purple-700' };
+
+const CAT_INFO = {
+  tnesevai: { label: 'TNeSevai', icon: '🏛️', cls: 'bg-green-50 border-green-200 text-green-700' },
+  digitalSeva: { label: 'Digital Seva', icon: '💻', cls: 'bg-blue-50 border-blue-200 text-blue-700' },
+  tnpsc: { label: 'TNPSC', icon: '🎓', cls: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
+  education: { label: 'Education', icon: '📚', cls: 'bg-purple-50 border-purple-200 text-purple-700' },
+};
 
 export default function BulkImportPage() {
   const [importing, setImporting] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, step: '' });
-  const [existCount, setExistCount] = useState({ services: 0, exams: 0 });
-  const [done, setDone] = useState(false);
+  const [counts, setCounts] = useState({ services: 0, exams: 0 });
   const [selected, setSelected] = useState({ services: true, exams: true });
+  const [status, setStatus] = useState('idle');
 
-  // Check existing counts
-  useEffect(() => {
-    const check = async () => {
-      const [sSnap, eSnap] = await Promise.all([
-        getDocs(collection(db, 'services')),
-        getDocs(collection(db, 'exams')),
-      ]);
-      setExistCount({ services: sSnap.size, exams: eSnap.size });
-    };
-    check();
-  }, [done]);
+  const refreshCounts = useCallback(async () => {
+    const [s, e] = await Promise.all([
+      getDocs(collection(db, 'services')),
+      getDocs(collection(db, 'exams')),
+    ]);
+    setCounts({ services: s.size, exams: e.size });
+  }, []);
 
-  const clearCollection = async (name) => {
-    const snap = await getDocs(collection(db, name));
-    await Promise.all(snap.docs.map(d => deleteDoc(doc(db, name, d.id))));
+  useEffect(() => { refreshCounts(); }, [refreshCounts]);
+
+  const handleClearOnly = async () => {
+    const what = [];
+    if (selected.services) what.push('Services');
+    if (selected.exams) what.push('Exams');
+    if (!what.length) { toast.error('Select at least one'); return; }
+    if (!window.confirm(`⚠️ This will permanently DELETE:\n${what.join(' + ')}\n\nAre you sure?`)) return;
+
+    setClearing(true);
+    setStatus('idle');
+    let totalDeleted = 0;
+
+    try {
+      if (selected.services) {
+        setProgress({ done: 0, total: counts.services, step: '🗂️ Deleting Services...' });
+        const n = await clearCollection('services', d => {
+          setProgress(p => ({ ...p, done: d, step: `🗂️ Services: ${d} deleted...` }));
+        });
+        totalDeleted += n;
+      }
+      if (selected.exams) {
+        setProgress({ done: 0, total: counts.exams, step: '🗂️ Deleting Exams...' });
+        const n = await clearCollection('exams', d => {
+          setProgress(p => ({ ...p, done: d, step: `🗂️ Exams: ${d} deleted...` }));
+        });
+        totalDeleted += n;
+      }
+      await refreshCounts();
+      setStatus('cleared');
+      toast.success(`✅ ${totalDeleted} records deleted successfully!`);
+    } catch (err) {
+      console.error(err);
+      toast.error('Delete failed: ' + err.message);
+    }
+
+    setClearing(false);
+    setProgress({ done: 0, total: 0, step: '' });
   };
 
   const handleImport = async () => {
     if (!selected.services && !selected.exams) {
-      toast.error('Select at least one type to import'); return;
+      toast.error('Select at least one type'); return;
     }
     setImporting(true);
-    setDone(false);
+    setStatus('idle');
+
+    const toImport = [];
+    if (selected.services) toImport.push({ label: 'Services', items: ALL_SERVICES, col: 'services' });
+    if (selected.exams) toImport.push({ label: 'Exams', items: ALL_EXAMS, col: 'exams' });
+    const total = toImport.reduce((a, t) => a + t.items.length, 0);
+    let done = 0;
 
     try {
-      const toImport = [];
-      if (selected.services) toImport.push({ label: 'Services', items: ALL_SERVICES, col: 'services' });
-      if (selected.exams) toImport.push({ label: 'Exams', items: ALL_EXAMS, col: 'exams' });
-
-      const total = toImport.reduce((a, t) => a + t.items.length, 0);
-      let done = 0;
-
       for (const { label, items, col } of toImport) {
-        setProgress({ done, total, step: `Importing ${label}...` });
         for (const item of items) {
           await addDoc(collection(db, col), {
-            ...item,
-            order: Date.now() + done,
-            createdAt: serverTimestamp(),
+            ...item, order: Date.now() + done, createdAt: serverTimestamp(),
           });
           done++;
-          setProgress({ done, total, step: `Importing ${label}... (${done}/${total})` });
+          setProgress({ done, total, step: `📥 Importing ${label}: ${done}/${total}` });
         }
       }
-
-      setDone(true);
-      toast.success(`✅ ${done} items imported successfully!`);
+      await refreshCounts();
+      setStatus('done');
+      toast.success(`🎉 ${done} items imported successfully!`);
     } catch (err) {
       console.error(err);
       toast.error('Import failed: ' + err.message);
     }
+
     setImporting(false);
     setProgress({ done: 0, total: 0, step: '' });
   };
 
-  const handleClearAll = async () => {
-    if (!window.confirm('⚠️ This will DELETE all existing services and exams. Are you sure?')) return;
-    setClearing(true);
+  const handleClearAndImport = async () => {
+    if (!selected.services && !selected.exams) {
+      toast.error('Select at least one type'); return;
+    }
+    if (!window.confirm('⚠️ All existing data will be deleted first, then fresh data will be imported. Are you sure?')) return;
+
+    setImporting(true);
+    setStatus('idle');
+    let totalDeleted = 0;
+
     try {
-      if (selected.services) await clearCollection('services');
-      if (selected.exams) await clearCollection('exams');
-      toast.success('Cleared successfully');
-      setDone(false);
-    } catch { toast.error('Clear failed'); }
-    setClearing(false);
+      // Step 1: Clear
+      if (selected.services) {
+        setProgress({ done: 0, total: counts.services, step: '🗂️ Clearing existing services...' });
+        const n = await clearCollection('services', d =>
+          setProgress(p => ({ ...p, done: d, step: `🗂️ Deleting services: ${d}...` }))
+        );
+        totalDeleted += n;
+      }
+      if (selected.exams) {
+        setProgress({ done: 0, total: counts.exams, step: '🗂️ Clearing existing exams...' });
+        const n = await clearCollection('exams', d =>
+          setProgress(p => ({ ...p, done: d, step: `🗂️ Deleting exams: ${d}...` }))
+        );
+        totalDeleted += n;
+      }
+
+      toast.success(`${totalDeleted} records cleared. Starting import now...`);
+
+      // Step 2: Import
+      const toImport = [];
+      if (selected.services) toImport.push({ label: 'Services', items: ALL_SERVICES, col: 'services' });
+      if (selected.exams) toImport.push({ label: 'Exams', items: ALL_EXAMS, col: 'exams' });
+      const total = toImport.reduce((a, t) => a + t.items.length, 0);
+      let done = 0;
+
+      for (const { label, items, col } of toImport) {
+        for (const item of items) {
+          await addDoc(collection(db, col), {
+            ...item, order: Date.now() + done, createdAt: serverTimestamp(),
+          });
+          done++;
+          setProgress({ done, total, step: `📥 Importing ${label}: ${done}/${total}` });
+        }
+      }
+
+      await refreshCounts();
+      setStatus('done');
+      toast.success(`🎉 ${done} items imported fresh successfully!`);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed: ' + err.message);
+    }
+
+    setImporting(false);
+    setProgress({ done: 0, total: 0, step: '' });
   };
 
   const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
+  const busy = importing || clearing;
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-3xl space-y-5">
+
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary-700 to-primary-500 rounded-2xl p-6 text-white">
-        <div className="flex items-center gap-3 mb-2">
-          <FaLayerGroup className="text-2xl" />
-          <h1 className="font-display font-extrabold text-xl">Bulk Import</h1>
-        </div>
-        <p className="text-primary-200 text-sm">
-          Import all pre-loaded TNeSevai, Digital Seva, TNPSC & Education services in one click.
-          <br />No need to add one by one!
+      <div>
+        <h1 className="font-display font-extrabold text-gray-800 text-xl flex items-center gap-2">
+          <FaLayerGroup className="text-primary-600" /> Bulk Import / Clear Data
+        </h1>
+        <p className="text-gray-500 text-xs mt-1">
+          Bulk import or delete Services and Exams in one click
         </p>
       </div>
 
-      {/* Current DB status */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div className="card p-4 flex items-center gap-4">
-          <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center">
-            <FaConciergeBell className="text-primary-600 text-xl" />
+      {/* Current Firebase Count */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="card p-4 flex items-center gap-3">
+          <div className="w-11 h-11 bg-primary-100 rounded-xl flex items-center justify-center">
+            <FaConciergeBell className="text-primary-600 text-lg" />
           </div>
           <div>
-            <p className="text-2xl font-display font-extrabold text-gray-800">{existCount.services}</p>
-            <p className="text-xs text-gray-500">Services currently in Firebase</p>
+            <p className="text-2xl font-display font-extrabold text-gray-800">{counts.services}</p>
+            <p className="text-xs text-gray-500">Services in Firebase</p>
           </div>
         </div>
-        <div className="card p-4 flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-            <FaCalendarAlt className="text-blue-600 text-xl" />
+        <div className="card p-4 flex items-center gap-3">
+          <div className="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center">
+            <FaCalendarAlt className="text-blue-600 text-lg" />
           </div>
           <div>
-            <p className="text-2xl font-display font-extrabold text-gray-800">{existCount.exams}</p>
-            <p className="text-xs text-gray-500">Exams currently in Firebase</p>
+            <p className="text-2xl font-display font-extrabold text-gray-800">{counts.exams}</p>
+            <p className="text-xs text-gray-500">Exams in Firebase</p>
           </div>
         </div>
       </div>
 
-      {/* Warning if data exists */}
-      {(existCount.services > 0 || existCount.exams > 0) && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
-          <FaExclamationTriangle className="text-amber-500 text-lg flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold text-amber-800 text-sm">Data Already Exists!</p>
-            <p className="text-amber-700 text-xs mt-0.5">
-              You already have {existCount.services} services and {existCount.exams} exams.
-              Importing again will <strong>add duplicates</strong>. Use "Clear & Re-Import" to replace all data cleanly.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* What will be imported */}
+      {/* Select what to work on */}
       <div className="card p-5">
-        <h2 className="font-display font-bold text-gray-800 mb-4">What Will Be Imported</h2>
-
-        {/* Select checkboxes */}
-        <div className="flex gap-4 mb-5">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={selected.services} onChange={e => setSelected(s => ({ ...s, services: e.target.checked }))}
-              className="w-4 h-4 accent-primary-600 rounded" />
-            <span className="font-semibold text-sm text-gray-700">
-              {ALL_SERVICES.length} Services
+        <h3 className="font-display font-bold text-gray-700 mb-3">Select Data to Work On</h3>
+        <div className="flex gap-6 mb-4">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" className="w-4 h-4 accent-primary-600 rounded"
+              checked={selected.services}
+              onChange={e => setSelected(s => ({ ...s, services: e.target.checked }))} />
+            <span className="text-sm font-semibold text-gray-700">
+              Services ({ALL_SERVICES.length} items)
             </span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={selected.exams} onChange={e => setSelected(s => ({ ...s, exams: e.target.checked }))}
-              className="w-4 h-4 accent-primary-600 rounded" />
-            <span className="font-semibold text-sm text-gray-700">
-              {ALL_EXAMS.length} Exams / Alerts
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" className="w-4 h-4 accent-primary-600 rounded"
+              checked={selected.exams}
+              onChange={e => setSelected(s => ({ ...s, exams: e.target.checked }))} />
+            <span className="text-sm font-semibold text-gray-700">
+              Exams ({ALL_EXAMS.length} items)
             </span>
           </label>
         </div>
 
         {/* Category breakdown */}
         {selected.services && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            {Object.entries(CAT_COUNTS).map(([cat, count]) => (
-              <div key={cat} className={`rounded-2xl border p-3 text-center ${CAT_COLORS[cat]}`}>
-                <div className="text-2xl mb-1">{CAT_ICONS[cat]}</div>
-                <p className="text-xl font-display font-extrabold">{count}</p>
-                <p className="text-xs font-semibold">{CAT_LABELS[cat]}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+            {Object.entries(CAT_INFO).map(([key, info]) => (
+              <div key={key} className={`rounded-xl border p-2.5 text-center ${info.cls}`}>
+                <span className="text-lg">{info.icon}</span>
+                <p className="text-lg font-extrabold font-display">{CAT_COUNTS[key] || 0}</p>
+                <p className="text-xs font-semibold">{info.label}</p>
               </div>
             ))}
           </div>
         )}
-
-        {/* Services preview list */}
-        {selected.services && (
-          <details className="mb-3">
-            <summary className="cursor-pointer text-sm font-semibold text-primary-600 hover:text-primary-700 select-none">
-              👁️ Preview all {ALL_SERVICES.length} services
-            </summary>
-            <div className="mt-3 max-h-60 overflow-y-auto border border-gray-100 rounded-xl divide-y divide-gray-50">
-              {ALL_SERVICES.map((s, i) => (
-                <div key={i} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50">
-                  <span className="text-sm">{s.icon}</span>
-                  <span className="text-xs text-gray-700 flex-1">{s.name}</span>
-                  <span className="text-xs text-gray-400 font-tamil truncate max-w-[120px]">{s.nameTa}</span>
-                </div>
-              ))}
-            </div>
-          </details>
-        )}
-
-        {/* Exams preview list */}
-        {selected.exams && (
-          <details>
-            <summary className="cursor-pointer text-sm font-semibold text-primary-600 hover:text-primary-700 select-none">
-              📅 Preview all {ALL_EXAMS.length} exam entries
-            </summary>
-            <div className="mt-3 max-h-48 overflow-y-auto border border-gray-100 rounded-xl divide-y divide-gray-50">
-              {ALL_EXAMS.map((e, i) => (
-                <div key={i} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50">
-                  <span className="text-sm">{e.icon}</span>
-                  <span className="text-xs text-gray-700 flex-1">{e.name}</span>
-                  <span className="text-xs text-orange-500">Last: {e.lastDate}</span>
-                </div>
-              ))}
-            </div>
-          </details>
-        )}
       </div>
 
-      {/* Progress bar */}
-      {importing && (
+      {/* Progress Bar */}
+      {busy && progress.total > 0 && (
         <div className="card p-5">
           <div className="flex items-center gap-2 mb-3">
             <FaSpinner className="text-primary-600 animate-spin" />
             <p className="text-sm font-semibold text-gray-700">{progress.step}</p>
           </div>
-          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full transition-all duration-300"
-              style={{ width: `${pct}%` }}
+              className="h-full rounded-full transition-all duration-300"
+              style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#22c55e,#86efac)' }}
             />
           </div>
-          <p className="text-xs text-gray-500 mt-2 text-right">{progress.done} / {progress.total} ({pct}%)</p>
+          <div className="flex justify-between mt-1.5">
+            <p className="text-xs text-gray-500">{progress.done} / {progress.total}</p>
+            <p className="text-xs font-bold text-primary-600">{pct}%</p>
+          </div>
         </div>
       )}
 
-      {/* Success */}
-      {done && !importing && (
+      {/* Status messages */}
+      {status === 'done' && !busy && (
         <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl p-4">
           <FaCheckCircle className="text-green-500 text-2xl flex-shrink-0" />
           <div>
             <p className="font-bold text-green-800">Import Complete! 🎉</p>
             <p className="text-green-700 text-xs mt-0.5">
-              All data is now live on your website. Go check Services and Exams pages!
+              Data successfully saved to Firebase. Check the Services and Exams pages.
+            </p>
+          </div>
+        </div>
+      )}
+      {status === 'cleared' && !busy && (
+        <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl p-4">
+          <FaCheckCircle className="text-orange-500 text-2xl flex-shrink-0" />
+          <div>
+            <p className="font-bold text-orange-800">Data Cleared Successfully! ✅</p>
+            <p className="text-orange-700 text-xs mt-0.5">
+              All data has been removed from Firebase. You can now import fresh data.
             </p>
           </div>
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Main import */}
+      {/* 3 Action Buttons */}
+      <div className="grid gap-3">
+
+        {/* 1. Delete Only */}
         <button
-          onClick={handleImport}
-          disabled={importing || clearing}
-          className="btn-primary flex-1 justify-center py-3.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={handleClearOnly}
+          disabled={busy}
+          className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ background: clearing ? '#fca5a5' : '#fee2e2', color: '#991b1b', border: '2px solid #fca5a5' }}
         >
-          {importing
-            ? <><FaSpinner className="animate-spin" /> Importing... ({pct}%)</>
-            : <><FaUpload /> Import {
-              selected.services && selected.exams ? `${ALL_SERVICES.length + ALL_EXAMS.length} Items` :
-                selected.services ? `${ALL_SERVICES.length} Services` :
-                  selected.exams ? `${ALL_EXAMS.length} Exams` : 'Nothing selected'
-            } to Firebase</>
+          {clearing
+            ? <><FaSpinner className="animate-spin" /> Deleting... ({pct}%)</>
+            : <><FaTrash /> Delete Only (No Import)</>
           }
         </button>
 
-        {/* Clear + Re-import */}
+        {/* 2. Import Only */}
         <button
-          onClick={async () => {
-            if (!window.confirm('⚠️ Clear existing data first, then import fresh?\n\nThis is recommended if you already have data.')) return;
-            setClearing(true);
-            try {
-              if (selected.services) await clearCollection('services');
-              if (selected.exams) await clearCollection('exams');
-              toast.success('Cleared! Now importing...');
-            } catch { toast.error('Clear failed'); setClearing(false); return; }
-            setClearing(false);
-            handleImport();
-          }}
-          disabled={importing || clearing}
-          className="btn-secondary flex-1 justify-center py-3.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={handleImport}
+          disabled={busy}
+          className="btn-primary w-full justify-center py-4 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {clearing
-            ? <><FaSpinner className="animate-spin" /> Clearing...</>
-            : <><FaTrash /> Clear & Re-Import (Fresh)</>
+          {importing && !clearing
+            ? <><FaSpinner className="animate-spin" /> Importing... ({pct}%)</>
+            : <><FaUpload /> Import Only (No Delete)</>
+          }
+        </button>
+
+        {/* 3. Clear + Re-Import */}
+        <button
+          onClick={handleClearAndImport}
+          disabled={busy}
+          className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ background: '#eff6ff', color: '#1e40af', border: '2px solid #bfdbfe' }}
+        >
+          {importing && clearing
+            ? <><FaSpinner className="animate-spin" /> Processing... ({pct}%)</>
+            : <><FaSync /> Clear + Fresh Import (Recommended)</>
           }
         </button>
       </div>
 
-      <p className="text-xs text-gray-400 text-center">
-        After import, you can edit/delete individual items from Manage Services & Manage Exams pages.
-      </p>
+      {/* Explanation */}
+      <div className="card p-4 bg-gray-50">
+        <h4 className="font-bold text-gray-700 text-sm mb-3">When to Use Which Button?</h4>
+        <div className="space-y-2.5">
+          <div className="flex items-start gap-3">
+            <div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <FaTrash className="text-red-600 text-xs" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Delete Only</p>
+              <p className="text-xs text-gray-500">
+                Use this when you want to remove all data from Firebase. Manually added services will also be deleted.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-7 h-7 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <FaUpload className="text-primary-600 text-xs" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Import Only</p>
+              <p className="text-xs text-gray-500">
+                Existing data will remain and new data will be added on top. Duplicates may occur.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <FaSync className="text-blue-600 text-xs" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Clear + Fresh Import ✅ Recommended</p>
+              <p className="text-xs text-gray-500">
+                Deletes all existing data first, then imports fresh 73 services + 12 exams. No duplicates.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Refresh button */}
+      <button onClick={refreshCounts} className="btn-secondary text-xs py-2 px-4" disabled={busy}>
+        <FaSync className={busy ? 'animate-spin' : ''} /> Refresh Count
+      </button>
+
     </div>
   );
 }
