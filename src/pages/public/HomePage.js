@@ -18,7 +18,7 @@ const STATS = [
 ];
 
 const DEFAULT_SERVICES = [
-    { name: 'Ration Card', nameTa: 'ரேஷன் கார்டு', icon: '🪪', category: 'tnesevai', desc: 'New / Correction / Surrender', descTa: 'புதிய / திருத்தம் / ஒப்படைப்பு' },
+    { name: 'Ration Card', nameTa: 'ரேஷன் கார்டு', icon: '🍚', category: 'tnesevai', desc: 'New / Correction / Surrender', descTa: 'புதிய / திருத்தம் / ஒப்படைப்பு' },
     { name: 'Birth / Death Certificate', nameTa: 'பிறப்பு / இறப்பு சான்றிதழ்', icon: '📜', category: 'tnesevai', desc: 'Apply online & download', descTa: 'ஆன்லைனில் விண்ணப்பிக்கவும்' },
     { name: 'Community Certificate', nameTa: 'சாதி சான்றிதழ்', icon: '📋', category: 'tnesevai', desc: 'Apply via TN eSevai portal', descTa: 'TN eSevai மூலம் விண்ணப்பிக்கவும்' },
     { name: 'Income Certificate', nameTa: 'வருமான சான்றிதழ்', icon: '💰', category: 'tnesevai', desc: 'Annual income certificate', descTa: 'ஆண்டு வருமான சான்றிதழ்' },
@@ -96,7 +96,7 @@ export default function HomePage() {
                         <div className="hidden md:grid grid-cols-2 gap-3">
                             {[
                                 { icon: '📋', en: 'Application Forms', ta: 'விண்ணப்ப படிவங்கள்' },
-                                { icon: '🪪', en: 'Ration Card', ta: 'ரேஷன் கார்டு' },
+                                { icon: '🍚', en: 'Ration Card', ta: 'ரேஷன் கார்டு' },
                                 { icon: '🎓', en: 'TNPSC / NEET', ta: 'TNPSC / NEET' },
                                 { icon: '🏦', en: 'Digital Seva', ta: 'டிஜிட்டல் சேவா' },
                                 { icon: '📱', en: 'Mobile / DTH Recharge', ta: 'மொபைல் / DTH' },
