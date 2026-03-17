@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f2a1a"/>
+      <stop offset="100%" stop-color="#052e16"/>
+    </linearGradient>
+    <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#15803d"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="96" fill="none" stroke="#22c55e" stroke-width="6" opacity="0.4"/>
+
+  <!-- Outer ring -->
+  <circle cx="256" cy="220" r="155" fill="none" stroke="url(#gg)" stroke-width="4"/>
+  <circle cx="256" cy="220" r="138" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.25"/>
+
+  <!-- RC monogram -->
+  <text x="256" y="206" text-anchor="middle" font-family="'Mukta',Georgia,sans-serif" font-size="96" font-weight="800" fill="#22c55e" letter-spacing="-3">RC</text>
+
+  <!-- Divider line in circle -->
+  <line x1="160" y1="218" x2="352" y2="218" stroke="#22c55e" stroke-width="2" opacity="0.45"/>
+
+  <!-- Sub text -->
+  <text x="256" y="252" text-anchor="middle" font-family="'Hind',Arial,sans-serif" font-size="22" font-weight="600" fill="#86efac" letter-spacing="6">COMPUTERS</text>
+
+  <!-- Corner dots decoration -->
+  <circle cx="256" cy="65"  r="6" fill="#22c55e" opacity="0.6"/>
+  <circle cx="411" cy="220" r="6" fill="#22c55e" opacity="0.6"/>
+  <circle cx="256" cy="375" r="6" fill="#22c55e" opacity="0.6"/>
+  <circle cx="101" cy="220" r="6" fill="#22c55e" opacity="0.6"/>
+
+  <!-- Gold VLE badge at bottom -->
+  <rect x="80" y="400" width="352" height="68" rx="16" fill="#052e16" stroke="url(#gold)" stroke-width="2"/>
+  <rect x="80" y="400" width="8"   height="68" rx="6"  fill="url(#gold)"/>
+  <text x="256" y="426" text-anchor="middle" font-family="'Hind',Arial,sans-serif" font-size="14" font-weight="700" fill="#fbbf24" letter-spacing="4">VLE CODE</text>
+  <text x="256" y="455" text-anchor="middle" font-family="'Courier New',monospace" font-size="26" font-weight="700" fill="#ffffff" letter-spacing="4">642198200013</text>
+</svg>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 160" width="480" height="160">
+  <defs>
+    <linearGradient id="green-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#15803d"/>
+    </linearGradient>
+    <linearGradient id="gold-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon mark -->
+  <circle cx="75" cy="80" r="68" fill="#0f2a1a"/>
+  <circle cx="75" cy="80" r="68" fill="none" stroke="url(#green-grad)" stroke-width="3"/>
+  <circle cx="75" cy="80" r="52" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.4"/>
+  <text x="75" y="72" text-anchor="middle" font-family="'Mukta',Georgia,sans-serif" font-size="34" font-weight="800" fill="#22c55e" letter-spacing="-1">RC</text>
+  <line x1="40" y1="81" x2="110" y2="81" stroke="#22c55e" stroke-width="1" opacity="0.5"/>
+  <text x="75" y="96" text-anchor="middle" font-family="'Hind',Arial,sans-serif" font-size="9" font-weight="600" fill="#86efac" letter-spacing="2.5">COMPUTERS</text>
+
+  <!-- Divider -->
+  <line x1="155" y1="30" x2="155" y2="130" stroke="#166534" stroke-width="1.5"/>
+
+  <!-- Text block -->
+  <text x="175" y="62" font-family="'Mukta',Georgia,sans-serif" font-size="36" font-weight="800" fill="#ffffff" letter-spacing="-0.5">Royal Computers</text>
+  <text x="177" y="85" font-family="'Noto Sans Tamil','Hind',Arial,sans-serif" font-size="14" font-weight="400" fill="#86efac" letter-spacing="0.5">ராயல் கம்ப்யூட்டர்ஸ்</text>
+
+  <!-- Gold line -->
+  <rect x="175" y="94" width="290" height="2" rx="1" fill="url(#gold-grad)" opacity="0.8"/>
+
+  <!-- Tagline -->
+  <text x="175" y="112" font-family="'Hind',Arial,sans-serif" font-size="12" font-weight="500" fill="#bbf7d0" letter-spacing="1.5">TNeSevai  &amp;  Digital Seva</text>
+
+  <!-- VLE badge -->
+  <rect x="175" y="124" width="200" height="22" rx="5" fill="#052e16" stroke="url(#gold-grad)" stroke-width="1.2"/>
+  <rect x="175" y="124" width="4"   height="22" rx="3" fill="url(#gold-grad)"/>
+  <text x="184" y="133" font-family="'Hind',Arial,sans-serif" font-size="7" font-weight="600" fill="#fbbf24" letter-spacing="1.5">VLE CODE</text>
+  <text x="184" y="143" font-family="'Courier New',monospace" font-size="11" font-weight="700" fill="#ffffff" letter-spacing="2">642198200013</text>
+</svg>

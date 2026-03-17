@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7" fill="#0f2a1a"/>
+  <rect width="32" height="32" rx="7" fill="none" stroke="#22c55e" stroke-width="1.5"/>
+  <circle cx="16" cy="14" r="10" fill="none" stroke="#22c55e" stroke-width="1.2"/>
+  <text x="16" y="12" text-anchor="middle" font-family="Georgia,serif" font-size="8" font-weight="700" fill="#22c55e">RC</text>
+  <line x1="9" y1="15" x2="23" y2="15" stroke="#22c55e" stroke-width="0.6" opacity="0.5"/>
+  <text x="16" y="21" text-anchor="middle" font-family="Arial,sans-serif" font-size="3.5" font-weight="600" fill="#86efac" letter-spacing="0.8">COM</text>
+</svg>
