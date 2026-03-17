@@ -12,17 +12,17 @@ import {
 const CAT_COUNTS = ALL_SERVICES.reduce((acc, s) => {
   acc[s.category] = (acc[s.category] || 0) + 1; return acc;
 }, {});
-const CAT_LABELS = { tnesevai:'TNeSevai', digitalSeva:'Digital Seva', tnpsc:'TNPSC', education:'Education' };
-const CAT_ICONS  = { tnesevai:'🏛️', digitalSeva:'💻', tnpsc:'🎓', education:'📚' };
-const CAT_COLORS = { tnesevai:'bg-green-50 border-green-200 text-green-700', digitalSeva:'bg-blue-50 border-blue-200 text-blue-700', tnpsc:'bg-yellow-50 border-yellow-200 text-yellow-700', education:'bg-purple-50 border-purple-200 text-purple-700' };
+const CAT_LABELS = { tnesevai: 'TNeSevai', digitalSeva: 'Digital Seva', tnpsc: 'TNPSC', education: 'Education' };
+const CAT_ICONS = { tnesevai: '🏛️', digitalSeva: '💻', tnpsc: '🎓', education: '📚' };
+const CAT_COLORS = { tnesevai: 'bg-green-50 border-green-200 text-green-700', digitalSeva: 'bg-blue-50 border-blue-200 text-blue-700', tnpsc: 'bg-yellow-50 border-yellow-200 text-yellow-700', education: 'bg-purple-50 border-purple-200 text-purple-700' };
 
 export default function BulkImportPage() {
-  const [importing,  setImporting]  = useState(false);
-  const [clearing,   setClearing]   = useState(false);
-  const [progress,   setProgress]   = useState({ done: 0, total: 0, step: '' });
+  const [importing, setImporting] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [progress, setProgress] = useState({ done: 0, total: 0, step: '' });
   const [existCount, setExistCount] = useState({ services: 0, exams: 0 });
-  const [done,       setDone]       = useState(false);
-  const [selected,   setSelected]   = useState({ services: true, exams: true });
+  const [done, setDone] = useState(false);
+  const [selected, setSelected] = useState({ services: true, exams: true });
 
   // Check existing counts
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function BulkImportPage() {
     try {
       const toImport = [];
       if (selected.services) toImport.push({ label: 'Services', items: ALL_SERVICES, col: 'services' });
-      if (selected.exams)    toImport.push({ label: 'Exams',    items: ALL_EXAMS,    col: 'exams' });
+      if (selected.exams) toImport.push({ label: 'Exams', items: ALL_EXAMS, col: 'exams' });
 
       const total = toImport.reduce((a, t) => a + t.items.length, 0);
       let done = 0;
@@ -84,7 +84,7 @@ export default function BulkImportPage() {
     setClearing(true);
     try {
       if (selected.services) await clearCollection('services');
-      if (selected.exams)    await clearCollection('exams');
+      if (selected.exams) await clearCollection('exams');
       toast.success('Cleared successfully');
       setDone(false);
     } catch { toast.error('Clear failed'); }
@@ -103,7 +103,7 @@ export default function BulkImportPage() {
         </div>
         <p className="text-primary-200 text-sm">
           Import all pre-loaded TNeSevai, Digital Seva, TNPSC & Education services in one click.
-          <br/>No need to add one by one!
+          <br />No need to add one by one!
         </p>
       </div>
 
@@ -256,10 +256,10 @@ export default function BulkImportPage() {
           {importing
             ? <><FaSpinner className="animate-spin" /> Importing... ({pct}%)</>
             : <><FaUpload /> Import {
-                selected.services && selected.exams ? `${ALL_SERVICES.length + ALL_EXAMS.length} Items` :
+              selected.services && selected.exams ? `${ALL_SERVICES.length + ALL_EXAMS.length} Items` :
                 selected.services ? `${ALL_SERVICES.length} Services` :
-                selected.exams    ? `${ALL_EXAMS.length} Exams` : 'Nothing selected'
-              } to Firebase</>
+                  selected.exams ? `${ALL_EXAMS.length} Exams` : 'Nothing selected'
+            } to Firebase</>
           }
         </button>
 
@@ -270,7 +270,7 @@ export default function BulkImportPage() {
             setClearing(true);
             try {
               if (selected.services) await clearCollection('services');
-              if (selected.exams)    await clearCollection('exams');
+              if (selected.exams) await clearCollection('exams');
               toast.success('Cleared! Now importing...');
             } catch { toast.error('Clear failed'); setClearing(false); return; }
             setClearing(false);
