@@ -55,18 +55,17 @@ function getPermissionError() {
   if (isAndroid) {
     return {
       title: 'Notifications Blocked',
-      message: 'Enable Chrome notifications in Android Settings.',
+      message: 'Enable Chrome notifications in Phone Settings.',
       steps: [
-        '1. Open your phone Settings',
-        '2. Go to Apps (or App Management)',
-        '3. Find and tap Chrome',
-        '4. Tap Notifications',
-        '5. Turn ON "Allow notifications"',
-        '6. Come back and refresh this page',
+        '1. Open phone Settings',
+        '2. Apps → Chrome → Notifications',
+        '3. Turn ON "Allow notifications"',
+        '4. Come back and refresh this page',
       ],
-      // Android intent URL — opens Chrome app notification settings
-      settingsUrl: 'intent://settings/app/com.android.chrome#Intent;scheme=android-app;end',
-      btnText: 'How to Enable (See Steps Above)',
+      // Opens Android app notification settings for Chrome directly
+      settingsUrl: 'app-notification-settings',
+      btnText: '⚙️ Open Phone Settings',
+      isAndroid: true,
     };
   }
   if (isIOS) {
@@ -315,16 +314,27 @@ function PermissionErrorModal({ info, onClose }) {
   const [copied, setCopied] = useState(false);
 
   const handleSettings = () => {
+    if (info.isAndroid) {
+      // Android — try multiple methods to open app notification settings
+      // Method 1: intent scheme (works on some Android browsers)
+      try {
+        window.location.href = 'intent:#Intent;action=android.settings.APP_NOTIFICATION_SETTINGS;S.app_package=com.android.chrome;end';
+        return;
+      } catch (_) { }
+      // Method 2: generic app settings
+      try {
+        window.location.href = 'intent:#Intent;action=android.settings.APPLICATION_DETAILS_SETTINGS;S.package=com.android.chrome;end';
+        return;
+      } catch (_) { }
+      // Method 3: fallback — just close modal, user follows steps
+      onClose();
+      return;
+    }
     if (info.copyText) {
-      // Copy URL to clipboard — user can paste in address bar
       navigator.clipboard.writeText(info.copyText).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 3000);
       }).catch(() => { });
-    }
-    // Try opening — works in some cases
-    if (info.settingsUrl) {
-      try { window.location.href = info.settingsUrl; } catch (_) { }
     }
   };
 
@@ -374,11 +384,30 @@ function PermissionErrorModal({ info, onClose }) {
               ))}
             </div>
 
-            {/* Copy URL button for desktop Chrome */}
-            {info.copyText && (
+            {/* Android — Open Settings button */}
+            {info.isAndroid && (
+              <button
+                onClick={handleSettings}
+                style={{
+                  width: '100%', padding: '14px', borderRadius: 16, border: 'none',
+                  background: 'linear-gradient(135deg,#1d4ed8,#3b82f6)',
+                  color: 'white', fontWeight: 800, fontSize: 14,
+                  cursor: 'pointer', marginBottom: 10,
+                  boxShadow: '0 8px 24px rgba(29,78,216,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = ''}
+              >
+                ⚙️ Open Phone Settings
+              </button>
+            )}
+
+            {/* Desktop Chrome — Copy URL */}
+            {info.copyText && !info.isAndroid && (
               <div style={{ background: '#f0fdf4', borderRadius: 12, padding: '12px 14px', marginBottom: 12, border: '1px solid #bbf7d0' }}>
                 <p style={{ fontSize: 11, color: '#15803d', fontWeight: 700, marginBottom: 6 }}>
-                  📋 Copy this URL → paste in Chrome address bar:
+                  📋 Copy → paste in Chrome address bar:
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <code style={{ fontSize: 11, color: '#374151', flex: 1, background: 'white', padding: '6px 10px', borderRadius: 8, border: '1px solid #e5e7eb', wordBreak: 'break-all' }}>
