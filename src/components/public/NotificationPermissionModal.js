@@ -56,6 +56,22 @@ export default function NotificationPermissionModal({ onAllow, onDeny }) {
                         background: 'linear-gradient(135deg,#15803d,#22c55e)',
                         padding: '32px 28px 24px', textAlign: 'center', position: 'relative',
                     }}>
+                        {/* Close button — top right */}
+                        <button
+                            onClick={onDeny}
+                            style={{
+                                position: 'absolute', top: 14, right: 14,
+                                width: 32, height: 32, borderRadius: 10,
+                                background: 'rgba(255,255,255,0.2)', border: 'none',
+                                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: 'white', fontSize: 14, transition: 'background 0.2s',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.35)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                        >
+                            ✕
+                        </button>
+
                         {/* Bell icon */}
                         <div style={{
                             width: 72, height: 72, borderRadius: 24,
