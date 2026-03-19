@@ -2,11 +2,24 @@
 // Shows on FIRST VISIT only — auto prompt, no bell click needed
 // If user clicks Allow → never shows again
 // If user clicks Deny → shows again next visit
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaBell, FaTimes } from 'react-icons/fa';
 
 export default function NotificationPermissionModal({ onAllow, onDeny }) {
     const [loading, setLoading] = useState(false);
+
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+        return () => {
+            document.body.style.overflow = prev;
+            document.body.style.position = '';
+            document.body.style.width = '';
+        };
+    }, []);
 
     const handleAllow = async () => {
         setLoading(true);

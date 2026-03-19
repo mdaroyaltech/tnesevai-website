@@ -8,10 +8,20 @@ export default function DocsModal({ service, docs, waLink, onClose }) {
   const isTa = i18n.language === 'ta';
   const name = (isTa && service?.nameTa) ? service.nameTa : service?.name;
 
-  // Lock body scroll
+  // Lock body scroll — position:fixed prevents iOS scroll too
   useEffect(() => {
+    const scrollY = window.scrollY;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.top = `-${scrollY}px`;
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+      window.scrollTo(0, scrollY); // restore scroll position
+    };
   }, []);
 
   // ESC to close
