@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://spt-royal-computers.vercel.app/sitemap.xml
