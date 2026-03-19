@@ -8,6 +8,8 @@ import { useLogoSettings } from '../../hooks/useLogoSettings';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import NotificationPanel from './NotificationPanel';
 import LanguageToggle from '../shared/LanguageToggle';
+import WhatsAppFloat from './WhatsAppFloat';
+import OpeningHoursBadge from './OpeningHoursBadge';
 import {
   FaHome, FaConciergeBell, FaCalendarAlt, FaInfoCircle,
   FaPhoneAlt, FaBell, FaBars, FaTimes, FaIdBadge,
@@ -127,7 +129,8 @@ export default function PublicLayout() {
               Digital Seva All Services — Apply Here
             </span>
           </div>
-          <div style={{ flexShrink: 0 }}>
+          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <OpeningHoursBadge />
             <LanguageToggle dark />
           </div>
         </div>
@@ -250,6 +253,7 @@ export default function PublicLayout() {
       </header>
 
       {notifOpen && <NotificationPanel onClose={() => setNotifOpen(false)} />}
+      <WhatsAppFloat />
       <main style={{ flex: 1, overflowX: 'hidden' }}><Outlet /></main>
 
       {/* ── Footer ── */}
