@@ -42,19 +42,19 @@ const CAT_COUNTS = ALL_SERVICES.reduce((acc, s) => {
 }, {});
 
 const CAT_INFO = {
-  tnesevai: { label: 'TNeSevai', icon: '🏛️', cls: 'bg-green-50 border-green-200 text-green-700' },
-  digitalSeva: { label: 'Digital Seva', icon: '💻', cls: 'bg-blue-50 border-blue-200 text-blue-700' },
-  tnpsc: { label: 'TNPSC', icon: '🎓', cls: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
-  education: { label: 'Education', icon: '📚', cls: 'bg-purple-50 border-purple-200 text-purple-700' },
+  tnesevai:   { label:'TNeSevai',    icon:'🏛️', cls:'bg-green-50 border-green-200 text-green-700' },
+  digitalSeva:{ label:'Digital Seva',icon:'💻', cls:'bg-blue-50 border-blue-200 text-blue-700' },
+  tnpsc:      { label:'TNPSC',       icon:'🎓', cls:'bg-yellow-50 border-yellow-200 text-yellow-700' },
+  education:  { label:'Education',   icon:'📚', cls:'bg-purple-50 border-purple-200 text-purple-700' },
 };
 
 export default function BulkImportPage() {
-  const [importing, setImporting] = useState(false);
-  const [clearing, setClearing] = useState(false);
-  const [progress, setProgress] = useState({ done: 0, total: 0, step: '' });
-  const [counts, setCounts] = useState({ services: 0, exams: 0 });
-  const [selected, setSelected] = useState({ services: true, exams: true });
-  const [status, setStatus] = useState('idle');
+  const [importing,  setImporting]  = useState(false);
+  const [clearing,   setClearing]   = useState(false);
+  const [progress,   setProgress]   = useState({ done: 0, total: 0, step: '' });
+  const [counts,     setCounts]     = useState({ services: 0, exams: 0 });
+  const [selected,   setSelected]   = useState({ services: true, exams: true });
+  const [status,     setStatus]     = useState('idle');
 
   const refreshCounts = useCallback(async () => {
     const [s, e] = await Promise.all([
@@ -66,10 +66,11 @@ export default function BulkImportPage() {
 
   useEffect(() => { refreshCounts(); }, [refreshCounts]);
 
+  // ── Clear Only ──
   const handleClearOnly = async () => {
     const what = [];
     if (selected.services) what.push('Services');
-    if (selected.exams) what.push('Exams');
+    if (selected.exams)    what.push('Exams');
     if (!what.length) { toast.error('Select at least one'); return; }
     if (!window.confirm(`⚠️ This will permanently DELETE:\n${what.join(' + ')}\n\nAre you sure?`)) return;
 
@@ -104,6 +105,7 @@ export default function BulkImportPage() {
     setProgress({ done: 0, total: 0, step: '' });
   };
 
+  // ── Import Only ──
   const handleImport = async () => {
     if (!selected.services && !selected.exams) {
       toast.error('Select at least one type'); return;
@@ -112,8 +114,8 @@ export default function BulkImportPage() {
     setStatus('idle');
 
     const toImport = [];
-    if (selected.services) toImport.push({ label: 'Services', items: ALL_SERVICES, col: 'services' });
-    if (selected.exams) toImport.push({ label: 'Exams', items: ALL_EXAMS, col: 'exams' });
+    if (selected.services) toImport.push({ label:'Services', items: ALL_SERVICES, col:'services' });
+    if (selected.exams)    toImport.push({ label:'Exams',    items: ALL_EXAMS,    col:'exams' });
     const total = toImport.reduce((a, t) => a + t.items.length, 0);
     let done = 0;
 
@@ -139,6 +141,7 @@ export default function BulkImportPage() {
     setProgress({ done: 0, total: 0, step: '' });
   };
 
+  // ── Clear + Re-Import ──
   const handleClearAndImport = async () => {
     if (!selected.services && !selected.exams) {
       toast.error('Select at least one type'); return;
@@ -170,8 +173,8 @@ export default function BulkImportPage() {
 
       // Step 2: Import
       const toImport = [];
-      if (selected.services) toImport.push({ label: 'Services', items: ALL_SERVICES, col: 'services' });
-      if (selected.exams) toImport.push({ label: 'Exams', items: ALL_EXAMS, col: 'exams' });
+      if (selected.services) toImport.push({ label:'Services', items: ALL_SERVICES, col:'services' });
+      if (selected.exams)    toImport.push({ label:'Exams',    items: ALL_EXAMS,    col:'exams' });
       const total = toImport.reduce((a, t) => a + t.items.length, 0);
       let done = 0;
 
@@ -197,7 +200,7 @@ export default function BulkImportPage() {
     setProgress({ done: 0, total: 0, step: '' });
   };
 
-  const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
+  const pct  = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
   const busy = importing || clearing;
 
   return (
@@ -213,7 +216,7 @@ export default function BulkImportPage() {
         </p>
       </div>
 
-      {/* Current Firebase Count */}
+      {/* Firebase Counts */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="card p-4 flex items-center gap-3">
           <div className="w-11 h-11 bg-primary-100 rounded-xl flex items-center justify-center">
@@ -281,7 +284,7 @@ export default function BulkImportPage() {
           <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-300"
-              style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#22c55e,#86efac)' }}
+              style={{ width:`${pct}%`, background:'linear-gradient(90deg,#22c55e,#86efac)' }}
             />
           </div>
           <div className="flex justify-between mt-1.5">
@@ -309,7 +312,7 @@ export default function BulkImportPage() {
           <div>
             <p className="font-bold text-orange-800">Data Cleared Successfully! ✅</p>
             <p className="text-orange-700 text-xs mt-0.5">
-              All data has been removed from Firebase. You can now import fresh data.
+              All selected data has been removed from Firebase. You can now import fresh data.
             </p>
           </div>
         </div>
@@ -323,7 +326,7 @@ export default function BulkImportPage() {
           onClick={handleClearOnly}
           disabled={busy}
           className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ background: clearing ? '#fca5a5' : '#fee2e2', color: '#991b1b', border: '2px solid #fca5a5' }}
+          style={{ background: clearing ? '#fca5a5' : '#fee2e2', color:'#991b1b', border:'2px solid #fca5a5' }}
         >
           {clearing
             ? <><FaSpinner className="animate-spin" /> Deleting... ({pct}%)</>
@@ -348,7 +351,7 @@ export default function BulkImportPage() {
           onClick={handleClearAndImport}
           disabled={busy}
           className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ background: '#eff6ff', color: '#1e40af', border: '2px solid #bfdbfe' }}
+          style={{ background:'#eff6ff', color:'#1e40af', border:'2px solid #bfdbfe' }}
         >
           {importing && clearing
             ? <><FaSpinner className="animate-spin" /> Processing... ({pct}%)</>
@@ -357,7 +360,7 @@ export default function BulkImportPage() {
         </button>
       </div>
 
-      {/* Explanation */}
+      {/* Guide */}
       <div className="card p-4 bg-gray-50">
         <h4 className="font-bold text-gray-700 text-sm mb-3">When to Use Which Button?</h4>
         <div className="space-y-2.5">
@@ -368,7 +371,7 @@ export default function BulkImportPage() {
             <div>
               <p className="text-sm font-semibold text-gray-700">Delete Only</p>
               <p className="text-xs text-gray-500">
-                Use this when you want to remove all data from Firebase. Manually added services will also be deleted.
+                Use when you want to remove all data from Firebase. Manually added services will also be deleted.
               </p>
             </div>
           </div>
@@ -379,7 +382,7 @@ export default function BulkImportPage() {
             <div>
               <p className="text-sm font-semibold text-gray-700">Import Only</p>
               <p className="text-xs text-gray-500">
-                Existing data will remain and new data will be added on top. Duplicates may occur.
+                Existing data remains. New data is added on top. Duplicates may occur if used multiple times.
               </p>
             </div>
           </div>
@@ -390,16 +393,16 @@ export default function BulkImportPage() {
             <div>
               <p className="text-sm font-semibold text-gray-700">Clear + Fresh Import ✅ Recommended</p>
               <p className="text-xs text-gray-500">
-                Deletes all existing data first, then imports fresh 73 services + 12 exams. No duplicates.
+                Deletes all existing data first, then imports 73 services + 12 exams fresh. No duplicates.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Refresh button */}
+      {/* Refresh */}
       <button onClick={refreshCounts} className="btn-secondary text-xs py-2 px-4" disabled={busy}>
-        <FaSync className={busy ? 'animate-spin' : ''} /> Refresh Count
+        <FaSync className={busy ? 'animate-spin' : ''} /> Refresh Firebase Count
       </button>
 
     </div>

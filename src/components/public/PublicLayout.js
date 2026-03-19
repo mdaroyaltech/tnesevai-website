@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useNotifications } from '../../context/NotificationContext';
-import { getContactSettings } from '../../firebase/services';
+import { listenContactSettings } from '../../firebase/services';
 import { useLogoSettings } from '../../hooks/useLogoSettings';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import NotificationPanel from './NotificationPanel';
@@ -98,7 +98,10 @@ export default function PublicLayout() {
     }
   };
 
-  useEffect(() => { getContactSettings().then(d => { if (d) setContact(d); }); }, []);
+  useEffect(() => {
+    const unsub = listenContactSettings(d => { if (d) setContact(d); });
+    return () => unsub && unsub();
+  }, []);
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 24);
     window.addEventListener('scroll', fn, { passive: true });

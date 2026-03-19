@@ -22,14 +22,14 @@ function Particle({ style }) {
 }
 
 export default function LoginPage() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [pass, setPass] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [status, setStatus] = useState('idle'); // idle | loading | success | error
-  const [shake, setShake] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const { login }   = useAuth();
+  const navigate    = useNavigate();
+  const [email,     setEmail]     = useState('');
+  const [pass,      setPass]      = useState('');
+  const [showPw,    setShowPw]    = useState(false);
+  const [status,    setStatus]    = useState('idle'); // idle | loading | success | error
+  const [shake,     setShake]     = useState(false);
+  const [mounted,   setMounted]   = useState(false);
 
   useEffect(() => {
     setTimeout(() => setMounted(true), 50);
@@ -60,7 +60,7 @@ export default function LoginPage() {
 
   const isLoading = status === 'loading';
   const isSuccess = status === 'success';
-  const isError = status === 'error';
+  const isError   = status === 'error';
 
   return (
     <>
@@ -116,11 +116,11 @@ export default function LoginPage() {
       }}>
 
         {/* ── Animated particles ── */}
-        <Particle style={{ width: 160, height: 160, top: '10%', left: '8%', animationDelay: '0s', animationDuration: '7s' }} />
-        <Particle style={{ width: 100, height: 100, top: '60%', left: '5%', animationDelay: '1.5s', animationDuration: '9s' }} />
-        <Particle style={{ width: 200, height: 200, top: '15%', right: '6%', animationDelay: '0.8s', animationDuration: '8s' }} />
-        <Particle style={{ width: 80, height: 80, bottom: '15%', right: '12%', animationDelay: '2s', animationDuration: '6s' }} />
-        <Particle style={{ width: 120, height: 120, bottom: '20%', left: '15%', animationDelay: '0.3s', animationDuration: '10s' }} />
+        <Particle style={{ width:160, height:160, top:'10%',  left:'8%',  animationDelay:'0s',   animationDuration:'7s'  }} />
+        <Particle style={{ width:100, height:100, top:'60%',  left:'5%',  animationDelay:'1.5s', animationDuration:'9s'  }} />
+        <Particle style={{ width:200, height:200, top:'15%',  right:'6%', animationDelay:'0.8s', animationDuration:'8s'  }} />
+        <Particle style={{ width:80,  height:80,  bottom:'15%',right:'12%',animationDelay:'2s',   animationDuration:'6s'  }} />
+        <Particle style={{ width:120, height:120, bottom:'20%',left:'15%', animationDelay:'0.3s', animationDuration:'10s' }} />
 
         {/* ── Grid background ── */}
         <div style={{
@@ -134,7 +134,7 @@ export default function LoginPage() {
 
         {/* ── Center glow ── */}
         <div style={{
-          position: 'absolute', top: '50%', left: '50%',
+          position: 'absolute', top:'50%', left:'50%',
           transform: 'translate(-50%,-50%)',
           width: 600, height: 600, borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(34,197,94,0.06) 0%, transparent 70%)',
@@ -171,9 +171,9 @@ export default function LoginPage() {
             }}>
               {/* Grid lines in header */}
               <div style={{
-                position: 'absolute', inset: 0,
-                backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)',
-                backgroundSize: '25px 25px',
+                position:'absolute', inset:0,
+                backgroundImage:'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)',
+                backgroundSize:'25px 25px',
               }} />
 
               <div style={{ position: 'relative', zIndex: 1 }}>
@@ -257,7 +257,7 @@ export default function LoginPage() {
                       color: '#1f2937',
                     }}
                     onFocus={e => { e.target.style.borderColor = '#22c55e'; e.target.style.background = 'white'; e.target.style.boxShadow = '0 0 0 4px rgba(34,197,94,0.08)'; }}
-                    onBlur={e => { e.target.style.borderColor = isError ? '#fca5a5' : '#e5e7eb'; e.target.style.background = '#f9fafb'; e.target.style.boxShadow = 'none'; }}
+                    onBlur={e  => { e.target.style.borderColor = isError ? '#fca5a5' : '#e5e7eb'; e.target.style.background = '#f9fafb'; e.target.style.boxShadow = 'none'; }}
                   />
                 </div>
               </div>
@@ -293,7 +293,7 @@ export default function LoginPage() {
                       color: '#1f2937',
                     }}
                     onFocus={e => { e.target.style.borderColor = '#22c55e'; e.target.style.background = 'white'; e.target.style.boxShadow = '0 0 0 4px rgba(34,197,94,0.08)'; }}
-                    onBlur={e => { e.target.style.borderColor = isError ? '#fca5a5' : '#e5e7eb'; e.target.style.background = '#f9fafb'; e.target.style.boxShadow = 'none'; }}
+                    onBlur={e  => { e.target.style.borderColor = isError ? '#fca5a5' : '#e5e7eb'; e.target.style.background = '#f9fafb'; e.target.style.boxShadow = 'none'; }}
                   />
                   <button
                     type="button"
@@ -411,8 +411,8 @@ export default function LoginPage() {
                 padding: '11px 24px', borderRadius: 12, cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = 'rgba(134,239,172,0.85)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+                onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.14)'; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor='rgba(255,255,255,0.3)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.07)'; e.currentTarget.style.color='rgba(134,239,172,0.85)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.15)'; }}
               >
                 <FaHome style={{ fontSize: 13 }} /> Back to Website
               </div>

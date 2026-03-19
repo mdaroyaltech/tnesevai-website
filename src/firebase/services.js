@@ -96,5 +96,18 @@ export const getContactSettings = async () => {
   } catch { return {}; }
 };
 
+// ✅ Live listener — updates instantly when admin saves
+export const listenContactSettings = (cb) => {
+  return onSnapshot(
+    doc(db, 'settings', 'contact'),
+    snap => {
+      const data = snap.exists() ? snap.data() : {};
+      saveCache('rc_contact', data); // update cache too
+      cb(data);
+    },
+    err => console.error('Contact settings error:', err)
+  );
+};
+
 export const saveContactSettings = (data) =>
   setDoc(doc(db, 'settings', 'contact'), data, { merge: true });
