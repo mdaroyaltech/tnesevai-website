@@ -98,11 +98,13 @@ export const getContactSettings = async () => {
 
 // ✅ Live listener — updates instantly when admin saves
 export const listenContactSettings = (cb) => {
+  // Clear old cache first so fresh data loads
+  try { localStorage.removeItem('rc_contact'); } catch { }
   return onSnapshot(
     doc(db, 'settings', 'contact'),
     snap => {
       const data = snap.exists() ? snap.data() : {};
-      saveCache('rc_contact', data); // update cache too
+      saveCache('rc_contact', data);
       cb(data);
     },
     err => console.error('Contact settings error:', err)

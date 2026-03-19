@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { listenContactSettings } from '../../firebase/services';
-import { FaWhatsapp, FaPhone, FaMapMarkerAlt, FaClock, FaEnvelope, FaDirections } from 'react-icons/fa';
+import { FaWhatsapp, FaPhone, FaMapMarkerAlt, FaClock, FaEnvelope, FaDirections, FaMap } from 'react-icons/fa';
 
 const DEFAULT = {
   phone: '', whatsapp: '', email: '',
-  address: '', addressTa: '', timings: '', timingsTa: '', mapLink: '',
+  address: '', addressTa: '', timings: '', timingsTa: '', mapLink: '', mapEmbed: '',
 };
 
 export default function ContactPage() {
@@ -15,7 +15,6 @@ export default function ContactPage() {
   const [info, setInfo] = useState(DEFAULT);
   const [loaded, setLoaded] = useState(false);
 
-  // ✅ Live listener — updates instantly when admin saves Contact Settings
   useEffect(() => {
     const unsub = listenContactSettings(data => {
       setInfo({ ...DEFAULT, ...data });
@@ -60,18 +59,13 @@ export default function ContactPage() {
 
       <div style={{ maxWidth: '700px', margin: '0 auto', padding: '48px 1.5rem' }}>
 
-        {/* Not yet configured notice */}
+        {/* Not configured notice */}
         {loaded && !info.phone && !info.whatsapp && !info.timings && (
-          <div style={{
-            background: '#fffbeb', border: '2px solid #fde68a', borderRadius: 20,
-            padding: '20px 24px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14,
-          }}>
-            <span style={{ fontSize: 24, flexShrink: 0 }}>⚠️</span>
+          <div style={{ background: '#fffbeb', border: '2px solid #fde68a', borderRadius: 20, padding: '20px 24px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
+            <span style={{ fontSize: 24 }}>⚠️</span>
             <div>
               <p style={{ fontWeight: 800, color: '#92400e', fontSize: 14, marginBottom: 4 }}>Contact info not set up yet</p>
-              <p style={{ color: '#b45309', fontSize: 13 }}>
-                Go to <strong>Admin → Contact Settings</strong> and fill in your phone, WhatsApp, address and timings.
-              </p>
+              <p style={{ color: '#b45309', fontSize: 13 }}>Go to <strong>Admin → Contact Settings</strong> and fill in your details.</p>
             </div>
           </div>
         )}
@@ -85,9 +79,7 @@ export default function ContactPage() {
                   <a href={c.href} target={c.target || '_self'} rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'block' }}>
                     <ContactCard {...c} />
                   </a>
-                ) : (
-                  <ContactCard {...c} />
-                )}
+                ) : <ContactCard {...c} />}
               </div>
             ))}
           </div>
@@ -101,16 +93,13 @@ export default function ContactPage() {
                 <FaMapMarkerAlt style={{ color: '#ef4444', fontSize: 18 }} />
               </div>
               <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
-                  {t('address')}
-                </p>
+                <p style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>{t('address')}</p>
                 <p style={{ fontWeight: 700, color: '#1f2937', fontSize: 14, lineHeight: 1.6 }} className="font-tamil">
                   {isTa && info.addressTa ? info.addressTa : info.address}
                 </p>
                 {info.mapLink && (
                   <a href={info.mapLink} target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#15803d', fontWeight: 700, fontSize: 12, marginTop: 10, textDecoration: 'none' }}
-                  >
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#15803d', fontWeight: 700, fontSize: 12, marginTop: 10, textDecoration: 'none' }}>
                     <FaDirections /> {t('getDirections')} ↗
                   </a>
                 )}
@@ -118,6 +107,71 @@ export default function ContactPage() {
             </div>
           </div>
         )}
+
+        {/* ── Google Maps Embed ── */}
+        {info.mapEmbed ? (
+          <div className="reveal card" style={{ overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0fdf4', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FaMap style={{ color: '#ef4444', fontSize: 14 }} />
+              </div>
+              <p style={{ fontWeight: 800, fontSize: 14, color: '#1f2937' }}>Our Location</p>
+              {info.mapLink && (
+                <a href={info.mapLink} target="_blank" rel="noopener noreferrer"
+                  style={{ marginLeft: 'auto', fontSize: 12, color: '#15803d', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <FaDirections /> Open in Maps
+                </a>
+              )}
+            </div>
+            {/* Embedded map — supports both full iframe HTML and plain URL */}
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden' }}>
+              {info.mapEmbed.includes('<iframe') ? (
+                // Full iframe HTML pasted — extract src and use it
+                <iframe
+                  src={info.mapEmbed.match(/src="([^"]+)"/)?.[1] || ''}
+                  title="Royal Computers Location"
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              ) : (
+                // Plain URL pasted directly
+                <iframe
+                  src={info.mapEmbed}
+                  title="Royal Computers Location"
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              )}
+            </div>
+          </div>
+        ) : info.mapLink ? (
+          /* Fallback: show a button to open Google Maps if no embed code */
+          <div className="reveal" style={{ marginBottom: 24 }}>
+            <a href={info.mapLink} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'block' }}>
+              <div style={{
+                background: 'white', border: '2px solid #bbf7d0', borderRadius: 20,
+                padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 14,
+                transition: 'all 0.2s', cursor: 'pointer',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#f0fdf4'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.transform = ''; }}
+              >
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <FaMap style={{ color: '#ef4444', fontSize: 20 }} />
+                </div>
+                <div>
+                  <p style={{ fontWeight: 800, fontSize: 14, color: '#1f2937', marginBottom: 3 }}>View on Google Maps</p>
+                  <p style={{ fontSize: 12, color: '#6b7280' }}>Get directions to Royal Computers</p>
+                </div>
+                <FaDirections style={{ color: '#15803d', fontSize: 18, marginLeft: 'auto' }} />
+              </div>
+            </a>
+          </div>
+        ) : null}
 
         {/* WhatsApp CTA */}
         {info.whatsapp && (
@@ -132,10 +186,8 @@ export default function ContactPage() {
             <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 28 }} className="font-tamil">
               {isTa ? 'உங்கள் கேள்விகளுக்கு விரைவான பதில் பெறுங்கள்' : 'Get quick answers to all your questions'}
             </p>
-            <a
-              href={`https://wa.me/${wa}?text=Hello Royal Computers, I need help with government services`}
-              target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}
-            >
+            <a href={`https://wa.me/${wa}?text=Hello Royal Computers, I need help with government services`}
+              target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 10,
                 background: 'white', color: '#16a34a', fontWeight: 800,
@@ -151,7 +203,6 @@ export default function ContactPage() {
             </a>
           </div>
         )}
-
       </div>
     </div>
   );
