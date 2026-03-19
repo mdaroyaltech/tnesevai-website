@@ -1,6 +1,8 @@
 // src/context/NotificationContext.js
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { messaging, getToken, onMessage, VAPID_KEY } from '../firebase/config';
+import { db } from '../firebase/config';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { listenNotifications } from '../firebase/services';
 import toast from 'react-hot-toast';
 import NotificationPermissionModal from '../components/public/NotificationPermissionModal';
@@ -129,18 +131,31 @@ export const NotificationProvider = ({ children }) => {
         playNotifSound();
         const newest = notifs[0];
         if (newest) {
-          toast.custom(() => (
+          toast.custom((t) => (
             <div style={{
               display: 'flex', alignItems: 'flex-start', gap: 12,
               background: 'white', borderRadius: 20, padding: '14px 18px',
               boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
               borderLeft: '4px solid #22c55e', maxWidth: 360,
+              position: 'relative',
+              opacity: t.visible ? 1 : 0,
+              transition: 'opacity 0.2s ease',
             }}>
               <span style={{ fontSize: 24, flexShrink: 0 }}>{newest.icon || '🔔'}</span>
-              <div>
-                <p style={{ fontWeight: 800, color: '#1f2937', fontSize: 14, marginBottom: 3 }}>{newest.title}</p>
-                <p style={{ fontSize: 12, color: '#6b7280' }}>{newest.body}</p>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontWeight: 800, color: '#1f2937', fontSize: 14, marginBottom: 3, paddingRight: 20 }}>{newest.title}</p>
+                <p style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.4 }}>{newest.body}</p>
               </div>
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                style={{
+                  position: 'absolute', top: 10, right: 10,
+                  width: 22, height: 22, borderRadius: 6,
+                  background: '#f3f4f6', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#9ca3af', fontSize: 12, flexShrink: 0,
+                }}
+              >✕</button>
             </div>
           ), { duration: 6000, position: 'top-right' });
         }
@@ -157,18 +172,31 @@ export const NotificationProvider = ({ children }) => {
     return onMessage(messaging, payload => {
       const { title, body } = payload.notification || {};
       playNotifSound();
-      toast.custom(() => (
+      toast.custom((t) => (
         <div style={{
           display: 'flex', alignItems: 'flex-start', gap: 12,
           background: 'white', borderRadius: 20, padding: '14px 18px',
           boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
           borderLeft: '4px solid #22c55e', maxWidth: 360,
+          position: 'relative',
+          opacity: t.visible ? 1 : 0,
+          transition: 'opacity 0.2s ease',
         }}>
-          <span style={{ fontSize: 24 }}>🔔</span>
-          <div>
-            <p style={{ fontWeight: 800, color: '#1f2937', fontSize: 14, marginBottom: 3 }}>{title}</p>
-            <p style={{ fontSize: 12, color: '#6b7280' }}>{body}</p>
+          <span style={{ fontSize: 24, flexShrink: 0 }}>🔔</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontWeight: 800, color: '#1f2937', fontSize: 14, marginBottom: 3, paddingRight: 20 }}>{title}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.4 }}>{body}</p>
           </div>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            style={{
+              position: 'absolute', top: 10, right: 10,
+              width: 22, height: 22, borderRadius: 6,
+              background: '#f3f4f6', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#9ca3af', fontSize: 12, flexShrink: 0,
+            }}
+          >✕</button>
         </div>
       ), { duration: 6000, position: 'top-right' });
     });
@@ -226,6 +254,18 @@ export const NotificationProvider = ({ children }) => {
         return null;
       }
       setFcmToken(token);
+
+      // ✅ Save token to Firestore so backend can send push to this device
+      try {
+        await setDoc(doc(db, 'fcm_tokens', token), {
+          token,
+          createdAt: serverTimestamp(),
+          userAgent: navigator.userAgent,
+        });
+      } catch (e) {
+        console.warn('Could not save FCM token:', e);
+      }
+
       return token;
 
     } catch (e) {

@@ -1,162 +1,427 @@
-// src/pages/admin/SendNotificationPage.js
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { addNotification, listenNotifications } from '../../firebase/services';
+// src/context/NotificationContext.js
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { messaging, getToken, onMessage, VAPID_KEY } from '../firebase/config';
+import { db } from '../firebase/config';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { listenNotifications } from '../firebase/services';
 import toast from 'react-hot-toast';
-import { FaBell, FaPaperPlane, FaTrash } from 'react-icons/fa';
+import NotificationPermissionModal from '../components/public/NotificationPermissionModal';
 
-const QUICK_TEMPLATES = [
-  { icon:'🔔', title:'New Service Added',       body:'We have added a new service at Royal Computers. Visit us today!' },
-  { icon:'📅', title:'Exam Notification',        body:'Important exam deadline approaching. Come and apply today!' },
-  { icon:'⏰', title:'Holiday Notice',           body:'Our center will be closed on {date}. We will reopen on {next day}.' },
-  { icon:'🎉', title:'Special Offer',            body:'Special service today at Royal Computers. Visit us now!' },
-  { icon:'📋', title:'TNPSC Alert',              body:'TNPSC application dates are announced. Apply before the deadline!' },
-  { icon:'🩺', title:'NEET Application Open',    body:'NEET 2025 application is now open. Last date is approaching. Apply now!' },
-];
+const Ctx = createContext();
+export const useNotifications = () => useContext(Ctx);
 
-const fmt = (ts) => {
-  if (!ts) return '';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
-};
+// ── Notification chime sound ──────────────────────────────
+function playNotifSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1100, 1320].forEach((f, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.12);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + i * 0.12 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.3);
+      osc.start(ctx.currentTime + i * 0.12);
+      osc.stop(ctx.currentTime + i * 0.12 + 0.35);
+    });
+  } catch (_) { }
+}
 
-export default function SendNotificationPage() {
-  const { t } = useTranslation();
-  const [notifs,  setNotifs]  = useState([]);
-  const [title,   setTitle]   = useState('');
-  const [body,    setBody]    = useState('');
-  const [icon,    setIcon]    = useState('🔔');
-  const [sending, setSending] = useState(false);
+// ── Detect exact block reason ─────────────────────────────
+function getPermissionError() {
+  const perm = Notification.permission;
+  if (perm === 'denied') {
+    const ua = navigator.userAgent;
+    const isAndroid = /Android/i.test(ua);
+    const isIOS = /iPhone|iPad/i.test(ua);
+    const isChrome = /Chrome/i.test(ua);
 
-  useEffect(() => listenNotifications(setNotifs), []);
+    if (isAndroid && isChrome) {
+      return {
+        type: 'android_chrome',
+        title: 'Notifications Blocked',
+        message: 'Chrome notifications are blocked on your device.',
+        steps: [
+          '1. Open phone Settings',
+          '2. Go to Apps → Chrome',
+          '3. Tap Notifications',
+          '4. Turn ON "Allow notifications"',
+          '5. Come back and refresh this page',
+        ],
+        settingsUrl: 'app-settings:', // Android deep link
+        btnText: 'Open Chrome Settings',
+      };
+    }
+    if (isIOS) {
+      return {
+        type: 'ios',
+        title: 'Notifications Blocked',
+        message: 'Enable notifications for Safari in iOS Settings.',
+        steps: [
+          '1. Open iPhone Settings',
+          '2. Scroll down to Safari',
+          '3. Tap Notifications',
+          '4. Turn ON "Allow Notifications"',
+          '5. Refresh this page',
+        ],
+        settingsUrl: null,
+        btnText: 'OK, I will do it',
+      };
+    }
+    if (isChrome) {
+      return {
+        type: 'chrome_desktop',
+        title: 'Notifications Blocked in Chrome',
+        message: 'You have blocked notifications for this site.',
+        steps: [
+          '1. Click the 🔒 lock icon in the address bar',
+          '2. Find "Notifications" → Change to "Allow"',
+          '3. Refresh the page',
+        ],
+        settingsUrl: 'chrome://settings/content/notifications',
+        btnText: 'Open Chrome Settings',
+      };
+    }
+    return {
+      type: 'browser',
+      title: 'Notifications Blocked',
+      message: 'Please allow notifications in your browser settings.',
+      steps: [
+        '1. Click the lock/info icon in the address bar',
+        '2. Find Notifications → Set to Allow',
+        '3. Refresh the page',
+      ],
+      settingsUrl: null,
+      btnText: 'OK, Got it',
+    };
+  }
+  return null;
+}
 
-  const handleSend = async () => {
-    if (!title.trim()) { toast.error('Title is required'); return; }
-    if (!body.trim())  { toast.error('Message body is required'); return; }
-    setSending(true);
+// ── localStorage keys ─────────────────────────────────────
+const KEY_PERM = 'rc_notif_permission';
+const KEY_SHOWN = 'rc_notif_prompt_shown';
+const KEY_READ = 'rc_readNotifs';
+
+export const NotificationProvider = ({ children }) => {
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [fcmToken, setFcmToken] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [errorInfo, setErrorInfo] = useState(null); // permission error modal
+  const prevCountRef = useRef(0);
+  const isFirstLoad = useRef(true);
+
+  // ── Live Firestore notifications ──
+  useEffect(() => {
+    return listenNotifications(notifs => {
+      setNotifications(notifs);
+      const readIds = JSON.parse(localStorage.getItem(KEY_READ) || '[]');
+      const cutoff = Date.now() - 48 * 3600 * 1000;
+      const unread = notifs.filter(n => {
+        const t = n.createdAt?.toMillis?.() ?? 0;
+        return t > cutoff && !readIds.includes(n.id);
+      });
+
+      // Play sound + toast only when NEW notification arrives
+      if (!isFirstLoad.current && unread.length > prevCountRef.current) {
+        playNotifSound();
+        const newest = notifs[0];
+        if (newest) {
+          toast.custom((t) => (
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: 12,
+              background: 'white', borderRadius: 20, padding: '14px 18px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+              borderLeft: '4px solid #22c55e', maxWidth: 360,
+              position: 'relative',
+              opacity: t.visible ? 1 : 0,
+              transition: 'opacity 0.2s ease',
+            }}>
+              <span style={{ fontSize: 24, flexShrink: 0 }}>{newest.icon || '🔔'}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontWeight: 800, color: '#1f2937', fontSize: 14, marginBottom: 3, paddingRight: 20 }}>{newest.title}</p>
+                <p style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.4 }}>{newest.body}</p>
+              </div>
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                style={{
+                  position: 'absolute', top: 10, right: 10,
+                  width: 22, height: 22, borderRadius: 6,
+                  background: '#f3f4f6', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#9ca3af', fontSize: 12, flexShrink: 0,
+                }}
+              >✕</button>
+            </div>
+          ), { duration: 6000, position: 'top-right' });
+        }
+      }
+      prevCountRef.current = unread.length;
+      isFirstLoad.current = false;
+      setUnreadCount(unread.length);
+    });
+  }, []);
+
+  // ── Foreground FCM push ──
+  useEffect(() => {
+    if (!messaging) return;
+    return onMessage(messaging, payload => {
+      const { title, body } = payload.notification || {};
+      playNotifSound();
+      toast.custom((t) => (
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+          background: 'white', borderRadius: 20, padding: '14px 18px',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+          borderLeft: '4px solid #22c55e', maxWidth: 360,
+          position: 'relative',
+          opacity: t.visible ? 1 : 0,
+          transition: 'opacity 0.2s ease',
+        }}>
+          <span style={{ fontSize: 24, flexShrink: 0 }}>🔔</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontWeight: 800, color: '#1f2937', fontSize: 14, marginBottom: 3, paddingRight: 20 }}>{title}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.4 }}>{body}</p>
+          </div>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            style={{
+              position: 'absolute', top: 10, right: 10,
+              width: 22, height: 22, borderRadius: 6,
+              background: '#f3f4f6', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#9ca3af', fontSize: 12, flexShrink: 0,
+            }}
+          >✕</button>
+        </div>
+      ), { duration: 6000, position: 'top-right' });
+    });
+  }, []);
+
+  // ── Auto show modal on first visit ──
+  useEffect(() => {
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission === 'granted') return;
+    if (sessionStorage.getItem(KEY_SHOWN)) return;
+    const saved = localStorage.getItem(KEY_PERM);
+    if (saved === 'granted') return;
+
+    const t = setTimeout(() => {
+      setShowModal(true);
+      sessionStorage.setItem(KEY_SHOWN, 'true');
+    }, 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  // ── Request permission with full error detection ──
+  const requestPermission = async () => {
+    if (!messaging) {
+      toast.error('Push notifications not supported in this browser.');
+      return null;
+    }
+
     try {
-      await addNotification({ title: title.trim(), body: body.trim(), icon });
-      toast.success('Notification sent!');
-      setTitle(''); setBody(''); setIcon('🔔');
-    } catch { toast.error('Failed to send notification'); }
-    setSending(false);
+      // Check if already denied
+      if (Notification.permission === 'denied') {
+        const err = getPermissionError();
+        setErrorInfo(err);
+        return null;
+      }
+
+      const perm = await Notification.requestPermission();
+
+      if (perm === 'denied') {
+        localStorage.setItem(KEY_PERM, 'denied');
+        const err = getPermissionError();
+        setErrorInfo(err);
+        return null;
+      }
+
+      if (perm !== 'granted') {
+        localStorage.setItem(KEY_PERM, 'denied');
+        return null;
+      }
+
+      // Get FCM token
+      localStorage.setItem(KEY_PERM, 'granted');
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+      if (!token) {
+        toast.error('Could not get notification token. Check Firebase config.');
+        return null;
+      }
+      setFcmToken(token);
+
+      // ✅ Save token to Firestore so backend can send push to this device
+      try {
+        await setDoc(doc(db, 'fcm_tokens', token), {
+          token,
+          createdAt: serverTimestamp(),
+          userAgent: navigator.userAgent,
+        });
+      } catch (e) {
+        console.warn('Could not save FCM token:', e);
+      }
+
+      return token;
+
+    } catch (e) {
+      console.error('Permission error:', e);
+      if (e.message?.includes('messaging/permission-blocked')) {
+        const err = getPermissionError();
+        setErrorInfo(err);
+      } else {
+        toast.error(`Error: ${e.message}`);
+      }
+      return null;
+    }
   };
 
-  const useTemplate = (tpl) => {
-    setTitle(tpl.title);
-    setBody(tpl.body);
-    setIcon(tpl.icon);
+  const handleModalAllow = async () => {
+    const token = await requestPermission();
+    setShowModal(false);
+    if (token) {
+      playNotifSound();
+      toast.success('Notifications enabled successfully!', { duration: 4000 });
+    }
+  };
+
+  const handleModalDeny = () => {
+    localStorage.setItem(KEY_PERM, 'denied');
+    setShowModal(false);
+  };
+
+  const markAllRead = () => {
+    const ids = notifications.map(n => n.id);
+    localStorage.setItem(KEY_READ, JSON.stringify(ids));
+    setUnreadCount(0);
   };
 
   return (
-    <div className="max-w-4xl space-y-6">
-      <div>
-        <h1 className="font-display font-extrabold text-gray-800 text-xl">{t('sendNotif')}</h1>
-        <p className="text-gray-500 text-xs mt-0.5">Notifications appear in the bell icon on the public portal</p>
-      </div>
+    <Ctx.Provider value={{ notifications, unreadCount, fcmToken, requestPermission, markAllRead }}>
+      {children}
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Compose */}
-        <div className="card p-5 space-y-4">
-          <h2 className="font-display font-bold text-gray-800">Compose Notification</h2>
+      {/* Auto permission modal */}
+      {showModal && !errorInfo && (
+        <NotificationPermissionModal
+          onAllow={handleModalAllow}
+          onDeny={handleModalDeny}
+        />
+      )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div>
-              <label className="label">Icon</label>
-              <input className="input-field text-2xl text-center" value={icon} onChange={e => setIcon(e.target.value)} />
-            </div>
-            <div className="col-span-3">
-              <label className="label">{t('notifTitle')} *</label>
-              <input className="input-field" value={title} onChange={e => setTitle(e.target.value)} placeholder="Notification title" />
-            </div>
+      {/* Permission error modal with exact steps */}
+      {errorInfo && (
+        <PermissionErrorModal
+          info={errorInfo}
+          onClose={() => setErrorInfo(null)}
+        />
+      )}
+    </Ctx.Provider>
+  );
+};
+
+// ── Error modal — shows exact steps based on device ──────
+function PermissionErrorModal({ info, onClose }) {
+  const openSettings = () => {
+    if (info.settingsUrl) {
+      // Try to open settings
+      try {
+        window.open(info.settingsUrl, '_blank');
+      } catch (_) { }
+    }
+    onClose();
+  };
+
+  return (
+    <>
+      <style>{`
+        @keyframes errorSlideUp {
+          from { opacity:0; transform:translateY(24px) scale(0.96); }
+          to   { opacity:1; transform:translateY(0) scale(1); }
+        }
+      `}</style>
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 9995,
+        background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
+      }} onClick={onClose} />
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 9996,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+      }}>
+        <div style={{
+          background: 'white', borderRadius: 28, overflow: 'hidden',
+          width: '100%', maxWidth: 380,
+          boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
+          animation: 'errorSlideUp 0.35s cubic-bezier(0.22,1,0.36,1)',
+        }} onClick={e => e.stopPropagation()}>
+
+          {/* Header */}
+          <div style={{
+            background: 'linear-gradient(135deg,#7f1d1d,#dc2626)',
+            padding: '24px 24px 20px', position: 'relative',
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 10, textAlign: 'center' }}>🔕</div>
+            <h2 style={{ color: 'white', fontWeight: 900, fontSize: '1.1rem', textAlign: 'center', marginBottom: 4 }}>
+              {info.title}
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, textAlign: 'center' }}>
+              {info.message}
+            </p>
           </div>
 
-          <div>
-            <label className="label">{t('notifBody')} *</label>
-            <textarea
-              className="input-field resize-none"
-              rows={4}
-              value={body}
-              onChange={e => setBody(e.target.value)}
-              placeholder="Notification message body..."
-            />
-            <p className="text-xs text-gray-400 mt-1">{body.length}/200 characters</p>
-          </div>
-
-          {/* Preview */}
-          {(title || body) && (
-            <div className="bg-gray-50 rounded-2xl p-3 border border-gray-200">
-              <p className="text-xs text-gray-400 font-semibold mb-2">PREVIEW</p>
-              <div className="flex items-start gap-3 bg-white rounded-xl p-3 shadow-sm border-l-4 border-primary-500">
-                <span className="text-xl">{icon || '🔔'}</span>
-                <div>
-                  <p className="font-bold text-sm text-gray-800">{title || 'Notification Title'}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{body || 'Notification body text...'}</p>
+          {/* Steps */}
+          <div style={{ padding: '20px 24px' }}>
+            <p style={{ fontSize: 11, fontWeight: 800, color: '#6b7280', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>
+              How to fix:
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+              {info.steps.map((step, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 10,
+                  padding: '10px 14px', borderRadius: 12,
+                  background: i === 0 ? '#fff7ed' : '#f9fafb',
+                  border: i === 0 ? '1px solid #fed7aa' : '1px solid #f0fdf4',
+                }}>
+                  <p style={{ fontSize: 13, color: '#374151', fontWeight: i === 0 ? 700 : 500, lineHeight: 1.4 }}>
+                    {step}
+                  </p>
                 </div>
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={handleSend}
-            disabled={sending}
-            className="btn-primary w-full justify-center py-3 disabled:opacity-60"
-          >
-            {sending
-              ? <><span className="animate-spin">⏳</span> Sending...</>
-              : <><FaPaperPlane /> {t('sendNotifBtn')}</>
-            }
-          </button>
-        </div>
-
-        {/* Quick Templates */}
-        <div className="space-y-4">
-          <div className="card p-5">
-            <h2 className="font-display font-bold text-gray-800 mb-3">Quick Templates</h2>
-            <div className="space-y-2">
-              {QUICK_TEMPLATES.map((tpl, i) => (
-                <button key={i}
-                  onClick={() => useTemplate(tpl)}
-                  className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-primary-50 rounded-xl transition-all border border-transparent hover:border-primary-200 text-left"
-                >
-                  <span className="text-xl flex-shrink-0">{tpl.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-gray-800 truncate">{tpl.title}</p>
-                    <p className="text-xs text-gray-400 truncate">{tpl.body}</p>
-                  </div>
-                  <span className="text-xs text-primary-600 font-semibold flex-shrink-0">Use →</span>
-                </button>
               ))}
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Sent Notifications History */}
-      <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display font-bold text-gray-800">Sent Notifications ({notifs.length})</h2>
+            {/* Open Settings button */}
+            <button
+              onClick={openSettings}
+              style={{
+                width: '100%', padding: '13px', borderRadius: 16,
+                background: 'linear-gradient(135deg,#dc2626,#ef4444)',
+                color: 'white', fontWeight: 800, fontSize: 14,
+                border: 'none', cursor: 'pointer', marginBottom: 10,
+                boxShadow: '0 8px 24px rgba(220,38,38,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = ''}
+            >
+              ⚙️ {info.btnText}
+            </button>
+
+            <button
+              onClick={onClose}
+              style={{
+                width: '100%', padding: '11px', borderRadius: 16,
+                border: '2px solid #e5e7eb', background: 'white',
+                color: '#6b7280', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              }}
+            >
+              Close
+            </button>
+          </div>
         </div>
-        {notifs.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
-            <FaBell className="text-4xl mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No notifications sent yet</p>
-          </div>
-        ) : (
-          <div className="space-y-2 max-h-72 overflow-y-auto">
-            {notifs.map(n => (
-              <div key={n.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-                <span className="text-xl flex-shrink-0">{n.icon || '📢'}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-gray-800 truncate">{n.title}</p>
-                  <p className="text-xs text-gray-500 truncate">{n.body}</p>
-                </div>
-                <p className="text-xs text-gray-400 flex-shrink-0">{fmt(n.createdAt)}</p>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
-    </div>
+    </>
   );
 }
