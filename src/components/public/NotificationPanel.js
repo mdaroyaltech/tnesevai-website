@@ -1,5 +1,5 @@
 // src/components/public/NotificationPanel.js
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNotifications } from '../../context/NotificationContext';
 import { FaBell, FaBellSlash, FaTimes } from 'react-icons/fa';
@@ -17,6 +17,18 @@ const timeAgo = (ts) => {
 export default function NotificationPanel({ onClose }) {
   const { t } = useTranslation();
   const { notifications, unreadCount, requestPermission, markAllRead } = useNotifications();
+
+  // Lock scroll when panel is open
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    document.body.classList.add('modal-open');
+    document.body.style.top = `-${scrollY}px`;
+    return () => {
+      document.body.classList.remove('modal-open');
+      document.body.style.top = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
 
   const handleEnable = async () => {
     await requestPermission();
