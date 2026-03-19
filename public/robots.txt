@@ -1,3 +1,6 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+Sitemap: https://spt-royal-computers.vercel.app/sitemap.xml
