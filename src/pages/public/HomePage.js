@@ -9,7 +9,7 @@ import HomeSearch from '../../components/public/HomeSearch';
 import ExamCard from '../../components/public/ExamCard';
 import {
   FaConciergeBell, FaCalendarAlt, FaArrowRight, FaWhatsapp,
-  FaCheckCircle, FaBolt, FaUsers, FaShieldAlt,
+  FaCheckCircle, FaBolt, FaUsers, FaShieldAlt, FaLaptop, FaTools, FaPrint,
 } from 'react-icons/fa';
 
 const STATS = [
@@ -239,6 +239,99 @@ export default function HomePage() {
         </section>
       )}
 
+      {/* ══════════ COMPUTER SALES & SERVICE ══════════ */}
+      <section style={{ background: 'white', padding: 'clamp(40px,6vw,72px) 0' }}>
+        <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 1.25rem' }}>
+
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 'clamp(24px,4vw,40px)', flexWrap: 'wrap' }}>
+            <div className="reveal-left">
+              <p style={{ color: '#1d4ed8', fontSize: 11, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 6 }}>── Computer & Laptop ──</p>
+              <h2 className="section-title" style={{ color: '#111827' }}>
+                {isTa ? 'கம்ப்யூட்டர் & லேப்டாப் சேவைகள்' : 'Computer Sales & Service'}
+              </h2>
+              <p style={{ color: '#6b7280', fontSize: 14, marginTop: 6 }}>
+                {isTa ? 'அப்துல் ஜீலானி — 20+ ஆண்டுகள் அனுபவம்' : 'By Abdul Jeelani — 20+ Years Experience'}
+              </p>
+            </div>
+            <Link to="/about" style={{ textDecoration: 'none' }} className="reveal">
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                color: '#1d4ed8', fontWeight: 700, fontSize: 14,
+                padding: '10px 20px', borderRadius: 12,
+                border: '2px solid #bfdbfe', background: 'white',
+                whiteSpace: 'nowrap', transition: 'all 0.2s',
+              }}
+                onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
+                onMouseLeave={e => e.currentTarget.style.background = 'white'}
+              >
+                {isTa ? 'மேலும் அறிக' : 'Learn More'} <FaArrowRight />
+              </div>
+            </Link>
+          </div>
+
+          {/* 3 main service cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 16, marginBottom: 20 }}>
+            {[
+              {
+                icon: <FaLaptop style={{ fontSize: 28, color: '#1d4ed8' }} />,
+                bg: '#eff6ff', border: '#bfdbfe', accent: '#1d4ed8',
+                en: 'Laptop & Computer Sales',
+                ta: 'லேப்டாப் & கம்ப்யூட்டர் விற்பனை',
+                desc: 'New & second hand — HP, Dell, Lenovo, Asus, Acer, Apple & more',
+                descTa: 'புதிய & பழைய — அனைத்து பிராண்டுகள்',
+              },
+              {
+                icon: <FaTools style={{ fontSize: 28, color: '#7c3aed' }} />,
+                bg: '#f5f3ff', border: '#ddd6fe', accent: '#7c3aed',
+                en: 'Hardware & Software Repair',
+                ta: 'ஹார்ட்வேர் & சாஃப்ட்வேர் பழுது',
+                desc: 'Motherboard, Screen, Battery, RAM, HDD, Windows & drivers',
+                descTa: 'அனைத்து வகை பழுதுபார்ப்பு',
+              },
+              {
+                icon: <FaPrint style={{ fontSize: 28, color: '#0e7490' }} />,
+                bg: '#ecfeff', border: '#a5f3fc', accent: '#0e7490',
+                en: 'Printer Sales & Service',
+                ta: 'பிரிண்டர் விற்பனை & சேவை',
+                desc: 'HP, Canon, Epson, Brother — ink, toner & accessories',
+                descTa: 'அனைத்து பிரிண்டர் பிராண்டுகள்',
+              },
+            ].map((item, i) => (
+              <div key={i} className="reveal-scale" style={{
+                background: item.bg, border: `2px solid ${item.border}`,
+                borderRadius: 22, padding: 28, transition: 'all 0.25s',
+                transitionDelay: `${i * 0.08}s`,
+              }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 16px 40px rgba(0,0,0,0.1)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}
+              >
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                  {item.icon}
+                </div>
+                <h3 style={{ fontWeight: 800, fontSize: 15, color: '#111827', marginBottom: 8 }} className="font-tamil">
+                  {isTa ? item.ta : item.en}
+                </h3>
+                <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6 }} className="font-tamil">
+                  {isTa ? item.descTa : item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Brand tags */}
+          <div className="reveal" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+            {['HP', 'Dell', 'Lenovo', 'Asus', 'Acer', 'Apple', 'Canon', 'Epson', 'Brother', 'Samsung'].map(b => (
+              <span key={b} style={{
+                background: '#f9fafb', border: '1.5px solid #e5e7eb',
+                borderRadius: 99, padding: '5px 14px', fontSize: 12, fontWeight: 700, color: '#374151',
+              }}>{b}</span>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
       {/* ══════════ SERVICES ══════════ */}
       <section style={{ background: '#f0fdf4', padding: 'clamp(40px,6vw,72px) 0' }}>
         <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 1.25rem' }}>
@@ -274,6 +367,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
 
       {/* ══════════ TRUST ══════════ */}
       <section style={{ background: 'white', padding: 'clamp(40px,6vw,64px) 0' }}>
