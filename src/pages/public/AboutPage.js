@@ -34,7 +34,7 @@ const WHY = [
   { icon: <FaShieldAlt />, en: 'Govt Authorized Center', ta: 'அரசு அங்கீகரிக்கப்பட்ட மையம்', color: '#15803d' },
   { icon: <FaBolt />, en: 'Fast & Reliable Service', ta: 'வேகமான & நம்பகமான சேவை', color: '#b45309' },
   { icon: <FaUsers />, en: '5000+ Happy Customers', ta: '5000+ திருப்தியான வாடிக்கையாளர்கள்', color: '#1d4ed8' },
-  { icon: <FaMedal />, en: '20+ Years Experience', ta: '20+ ஆண்டுகள் அனுபவம்', color: '#7c3aed' },
+  { icon: <FaMedal />, en: '15+ Years Experience', ta: '15+ ஆண்டுகள் அனுபவம்', color: '#7c3aed' },
   { icon: <FaLeaf />, en: 'Honest & Transparent', ta: 'நேர்மையான & வெளிப்படையான', color: '#15803d' },
 ];
 
@@ -91,8 +91,8 @@ export default function AboutPage() {
           </h2>
           <p style={{ color: '#4b5563', lineHeight: 1.8, fontSize: 15 }} className="font-tamil">
             {isTa
-              ? 'ராயல் கம்ப்யூட்டர்ஸ் ஒரு அங்கீகரிக்கப்பட்ட TNeSevai & Digital Seva மையமாகும். அரசு சேவைகளுடன், கம்ப்யூட்டர், லேப்டாப் மற்றும் பிரிண்டர் விற்பனை மற்றும் சேவையும் வழங்குகிறோம். 20+ ஆண்டுகள் அனுபவத்துடன் நம்பகமான சேவை.'
-              : 'Royal Computers is an authorized TNeSevai & Digital Seva center, and also a trusted computer, laptop & printer sales and service center in Singarapettai. With 20+ years of experience, we provide fast, reliable and affordable services for all your government and technical needs.'
+              ? 'ராயல் கம்ப்யூட்டர்ஸ் ஒரு அங்கீகரிக்கப்பட்ட TNeSevai & Digital Seva மையமாகும். அரசு சேவைகளுடன், கம்ப்யூட்டர், லேப்டாப் மற்றும் பிரிண்டர் விற்பனை மற்றும் சேவையும் வழங்குகிறோம். 15+ ஆண்டுகள் அனுபவத்துடன் நம்பகமான சேவை.'
+              : 'Royal Computers is an authorized TNeSevai & Digital Seva center, and also a trusted computer, laptop & printer sales and service center in Singarapettai. With 15+ years of experience, we provide fast, reliable and affordable services for all your government and technical needs.'
             }
           </p>
           {/* Live info from Firebase */}
@@ -141,7 +141,7 @@ export default function AboutPage() {
           {/* Stats — NO customer count for computer service */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', borderBottom: '1px solid #f0fdf4' }}>
             {[
-              { icon: '⭐', value: '20+', label: isTa ? 'ஆண்டுகள் அனுபவம்' : 'Years Experience' },
+              { icon: '⭐', value: '15+', label: isTa ? 'ஆண்டுகள் அனுபவம்' : 'Years Experience' },
               { icon: '🔧', value: 'All', label: isTa ? 'அனைத்து பிராண்டுகள்' : 'Brands Served' },
             ].map((s, i) => (
               <div key={i} style={{ padding: '20px 16px', textAlign: 'center', borderRight: i === 0 ? '1px solid #f0fdf4' : 'none' }}>
@@ -156,8 +156,8 @@ export default function AboutPage() {
           <div style={{ padding: '24px 32px' }}>
             <p style={{ color: '#4b5563', lineHeight: 1.8, fontSize: 14 }} className="font-tamil">
               {isTa
-                ? 'அப்துல் ஜீலானி அவர்கள் 20+ ஆண்டுகளாக கம்ப்யூட்டர், லேப்டாப் மற்றும் பிரிண்டர் விற்பனை மற்றும் சேவையில் நிபுணத்துவம் பெற்றவர். HP, Dell, Lenovo, Asus உள்ளிட்ட அனைத்து பிராண்டுகளிலும் சேவை வழங்குகிறார்.'
-                : 'Abdul Jeelani has 20+ years of hands-on experience in computer, laptop, and printer sales & service. He specializes in hardware repair, software installation, and technical support for all major brands including HP, Dell, Lenovo, Asus, Canon, and Epson.'
+                ? 'அப்துல் ஜீலானி அவர்கள் 15+ ஆண்டுகளாக கம்ப்யூட்டர், லேப்டாப் மற்றும் பிரிண்டர் விற்பனை மற்றும் சேவையில் நிபுணத்துவம் பெற்றவர். HP, Dell, Lenovo, Asus உள்ளிட்ட அனைத்து பிராண்டுகளிலும் சேவை வழங்குகிறார்.'
+                : 'Abdul Jeelani has 15+ years of hands-on experience in computer, laptop, and printer sales & service. He specializes in hardware repair, software installation, and technical support for all major brands including HP, Dell, Lenovo, Asus, Canon, and Epson.'
               }
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>

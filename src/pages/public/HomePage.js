@@ -16,7 +16,7 @@ const STATS = [
   { icon: '👨‍👩‍👧', value: '5000+', label: 'Customers', labelTa: 'வாடிக்கையாளர்கள்' },
   { icon: '⚡', value: '24hr', label: 'Fast Service', labelTa: 'வேக சேவை' },
   { icon: '✅', value: '100%', label: 'Authorized', labelTa: 'அங்கீகரிக்கப்பட்டது' },
-  { icon: '🏆', value: '10+', label: 'Yrs Experience', labelTa: 'ஆண்டுகள் அனுபவம்' },
+  { icon: '🏆', value: '15+', label: 'Yrs Experience', labelTa: 'ஆண்டுகள் அனுபவம்' },
 ];
 
 const QUICK = [
@@ -156,7 +156,7 @@ export default function HomePage() {
 
               {/* Mini stats — 3 across, always visible */}
               <div className="anim-slide-up d6" style={{ display: 'flex', gap: 'clamp(16px,4vw,32px)', flexWrap: 'wrap' }}>
-                {[{ v: '5000+', l: 'Customers' }, { v: '73+', l: 'Services' }, { v: '10+', l: 'Years' }].map((s, i) => (
+                {[{ v: '5000+', l: 'Customers' }, { v: '73+', l: 'Services' }, { v: '15+', l: 'Years' }].map((s, i) => (
                   <div key={i}>
                     <p style={{ color: 'white', fontWeight: 900, fontSize: 'clamp(18px,3vw,22px)', lineHeight: 1 }}>{s.v}</p>
                     <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em' }}>{s.l}</p>
@@ -251,7 +251,7 @@ export default function HomePage() {
                 {isTa ? 'கம்ப்யூட்டர் & லேப்டாப் சேவைகள்' : 'Computer Sales & Service'}
               </h2>
               <p style={{ color: '#6b7280', fontSize: 14, marginTop: 6 }}>
-                {isTa ? 'அப்துல் ஜீலானி — 20+ ஆண்டுகள் அனுபவம்' : 'By Abdul Jeelani — 20+ Years Experience'}
+                {isTa ? 'அப்துல் ஜீலானி — 15+ ஆண்டுகள் அனுபவம்' : 'By Abdul Jeelani — 15+ Years Experience'}
               </p>
             </div>
             <Link to="/about" style={{ textDecoration: 'none' }} className="reveal">
