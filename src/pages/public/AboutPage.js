@@ -33,7 +33,12 @@ const BRANDS = ['HP', 'Dell', 'Lenovo', 'Asus', 'Acer', 'Apple', 'Canon', 'Epson
 const WHY = [
   { icon: <FaShieldAlt />, en: 'Govt Authorized Center', ta: 'அரசு அங்கீகரிக்கப்பட்ட மையம்', color: '#15803d' },
   { icon: <FaBolt />, en: 'Fast & Reliable Service', ta: 'வேகமான & நம்பகமான சேவை', color: '#b45309' },
-  { icon: <FaUsers />, en: '5000+ Happy Customers', ta: '5000+ திருப்தியான வாடிக்கையாளர்கள்', color: '#1d4ed8' },
+  {
+    icon: <FaUsers />,
+    en: '25,000+ Applications Processed',
+    ta: '25,000+ விண்ணப்பங்கள் செயல்படுத்தப்பட்டது',
+    color: '#1d4ed8'
+  },
   { icon: <FaMedal />, en: '15+ Years Experience', ta: '15+ ஆண்டுகள் அனுபவம்', color: '#7c3aed' },
   { icon: <FaLeaf />, en: 'Honest & Transparent', ta: 'நேர்மையான & வெளிப்படையான', color: '#15803d' },
 ];

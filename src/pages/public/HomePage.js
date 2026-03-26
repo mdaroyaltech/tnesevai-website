@@ -13,7 +13,12 @@ import {
 } from 'react-icons/fa';
 
 const STATS = [
-  { icon: '👨‍👩‍👧', value: '5000+', label: 'Customers', labelTa: 'வாடிக்கையாளர்கள்' },
+  {
+    icon: '📄',
+    value: '25,000+',
+    label: 'Applications Processed',
+    labelTa: 'செயல்படுத்தப்பட்ட விண்ணப்பங்கள்'
+  },
   { icon: '⚡', value: '24hr', label: 'Fast Service', labelTa: 'வேக சேவை' },
   { icon: '✅', value: '100%', label: 'Authorized', labelTa: 'அங்கீகரிக்கப்பட்டது' },
   { icon: '🏆', value: '15+', label: 'Yrs Experience', labelTa: 'ஆண்டுகள் அனுபவம்' },
@@ -156,7 +161,7 @@ export default function HomePage() {
 
               {/* Mini stats — 3 across, always visible */}
               <div className="anim-slide-up d6" style={{ display: 'flex', gap: 'clamp(16px,4vw,32px)', flexWrap: 'wrap' }}>
-                {[{ v: '5000+', l: 'Customers' }, { v: '73+', l: 'Services' }, { v: '15+', l: 'Years' }].map((s, i) => (
+                {[{ v: '25,000+', l: 'Applications Processed' }, { v: '73+', l: 'Services' }, { v: '15+', l: 'Years' }].map((s, i) => (
                   <div key={i}>
                     <p style={{ color: 'white', fontWeight: 900, fontSize: 'clamp(18px,3vw,22px)', lineHeight: 1 }}>{s.v}</p>
                     <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em' }}>{s.l}</p>
@@ -381,7 +386,13 @@ export default function HomePage() {
             {[
               { icon: <FaShieldAlt style={{ fontSize: '2rem', color: '#15803d' }} />, title: 'Govt Authorized', titleTa: 'அரசு அங்கீகரிக்கப்பட்டது', desc: 'Official TNeSevai & Digital Seva center', descTa: 'அதிகாரப்பூர்வ மையம்' },
               { icon: <FaBolt style={{ fontSize: '2rem', color: '#f59e0b' }} />, title: 'Fast & Reliable', titleTa: 'வேகமான & நம்பகமான', desc: 'Quick processing, zero delays', descTa: 'விரைவான சேவை' },
-              { icon: <FaUsers style={{ fontSize: '2rem', color: '#15803d' }} />, title: '5000+ Customers', titleTa: '5000+ வாடிக்கையாளர்கள்', desc: 'Happy customers across the region', descTa: 'திருப்தியான வாடிக்கையாளர்கள்' },
+              {
+                icon: <FaUsers style={{ fontSize: '2rem', color: '#15803d' }} />,
+                title: '25,000+ Applications Processed',
+                titleTa: '25,000+ விண்ணப்பங்கள் செயல்படுத்தப்பட்டது',
+                desc: 'Across Tamil Nadu',
+                descTa: 'தமிழ்நாடு முழுவதும் சேவைகள் வழங்கப்பட்டது'
+              },
             ].map((item, i) => (
               <div key={i} className={`trust-item reveal`} style={{ transitionDelay: `${i * 0.1}s`, border: '2px solid #f0fdf4' }}>
                 <div style={{ marginBottom: 16 }}>{item.icon}</div>
